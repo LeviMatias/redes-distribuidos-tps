@@ -6,7 +6,7 @@ CHUNK_SIZE = 1024
 
 class connection_instance:
 
-    def __init__(self, cli, conn, addr):
+    def __init__(self, cli, addr):
         self.client = cli
         self.addr = addr
 
@@ -58,7 +58,6 @@ def serve():
     except KeyboardInterrupt:
 
         if sock:
-            sock.shutdown(socket.SHUT_RDWR)
             sock.close()
             for cli in active_connections:
                 cli.close()
