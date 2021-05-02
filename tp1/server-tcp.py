@@ -2,6 +2,7 @@ import socket
 from threading import Thread
 
 CHUNK_SIZE = 1024
+active_connections = []
 
 
 class connection_instance:
@@ -35,11 +36,8 @@ class connection_instance:
             self.thread.join()
 
 
-active_connections = []
-
-
-def serve():
-    addr = ("localhost", 8080)
+def serve(host, port):
+    addr = (host, port)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(addr)
@@ -55,6 +53,10 @@ def serve():
             ci.run()
             active_connections.append(ci)
 
+            # cull list from dead connections
+            active_connections[:] = [c for c in active_connections
+                                     if not c.closed]
+
     except KeyboardInterrupt:
 
         if sock:
@@ -66,4 +68,4 @@ def serve():
 
 
 if __name__ == "__main__":
-    serve()
+    serve("localhost", 8080)
