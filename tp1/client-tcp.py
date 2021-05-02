@@ -11,7 +11,7 @@ class Client:
         self.sock = socket.socket(addres_family,protocol)
 
     def connect(self,host,port):
-        sock.connect({host,port})
+        self.sock.connect((host,port))
 
     def send(self,file_path):
 
@@ -20,7 +20,7 @@ class Client:
         size = f.tell()
         f.seek(0,os.SEEK_SET)
 
-        sock.send(str(size).encode())
+        self.sock.send(str(size).encode())
 
         while True:
             chunk = f.read(CHUNCK_SIZE)
@@ -29,7 +29,7 @@ class Client:
         f.close()
 
     def close():
-        sock.close()
+        self.sock.close()
 
 
 if __name__ == "__main__":
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     client = Client()
 
     host = '127.0.0.1'
-    port = '8080'
+    port = 8081
 
     client.connect(host,port)
-    client.send('C:\Users\axelpm\Desktop\test.txt')
+    client.send(u"C:\\Users\\axelpm\\Desktop\\test.txt")
     client.close()
