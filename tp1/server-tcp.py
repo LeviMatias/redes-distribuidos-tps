@@ -5,6 +5,7 @@ from threading import Thread
 
 CHUNK_SIZE = 1024
 
+
 class connection_instance:
 
     def __init__(self, cli, conn, addr):
@@ -37,25 +38,28 @@ class connection_instance:
 
 
 active_connections = []
-serving = True
 
 
 def serve():
-    addr = ("localhost", 8080)
+    addr = ("localhost", 8081)
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(addr)
+        sock.listen(1)
+        print("listening on " + addr[0] + ":" + str(addr[1]))
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(addr)
-    sock.listen(1)
-    print("listening on " + addr[0] + ":" + str(addr[1]))
+        while True:
+            conn, addr = sock.accept()
+            if not conn:
+                break
 
-    while serving:
-        conn, addr = sock.accept()
-        if not conn:
-            break
-
-        ci = connection_instance(conn, addr)
-        ci.run()
-        active_connections.append(ci)
+            ci = connection_instance(conn, addr)
+            ci.run()
+            active_connections.append(ci)
+    except KeyboardInterrupt:
+        if sock:
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
 
 
 def cleanup():
