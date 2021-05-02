@@ -3,12 +3,12 @@ import atexit
 import socket
 from threading import Thread
 
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 16
 
 
 class connection_instance:
 
-    def __init__(self, cli, conn, addr):
+    def __init__(self, cli, addr):
         self.client = cli
         self.addr = addr
 
