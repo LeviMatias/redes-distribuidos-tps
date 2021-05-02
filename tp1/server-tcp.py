@@ -1,5 +1,3 @@
-import os
-import atexit
 import socket
 from threading import Thread
 
@@ -41,7 +39,7 @@ active_connections = []
 
 
 def serve():
-    addr = ("localhost", 8081)
+    addr = ("localhost", 8080)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(addr)
@@ -56,21 +54,16 @@ def serve():
             ci = connection_instance(conn, addr)
             ci.run()
             active_connections.append(ci)
+
     except KeyboardInterrupt:
+
         if sock:
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
+            for cli in active_connections:
+                cli.close()
 
-
-def cleanup():
-    for cli in active_connections:
-        cli.close()
-
-    print("goodbye")
-    os.exit()
-
-
-atexit.register(cleanup)
+        print("goodbye")
 
 
 if __name__ == "__main__":
