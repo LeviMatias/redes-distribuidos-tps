@@ -12,42 +12,40 @@ class connection_instance:
         self.client = cli
         self.closed = False
 
-    def upload(self):
-        # wait for file name!
-        name = str(self.client.recv_chunk())
-        if name == "":
-            return self.__close()
+    def __server_upload_protocol(self):
 
+        file_name = self.client.wait_for_name()
+        size = self.client.wait_for_size()
+        self.recive_file(file_name, size)
+
+    def __server_download_protocol(self):
+
+        file_name = self.client.wait_for_name()
+        size = self.client.send_size(file_name)
+        self.send_file(file_name, size)
+
+    def dispatch_request(self, request):
+        request = str(self.client.recv())
         self.client.send_ack()
-        self.upfile = open(name, "w+")
 
-        self.client.recv_to_file(self.upfile)
+        if request == UPLOAD:
+            self.__server_upload_protocol()
+        elif request == DOWNLOAD:
+            self.__server_download_protocol()
+        else:
+            raise(ConnectionAbortedError)
 
-        self.upfile.close()
-        self.upfile = None
-        self.__close()
+    def listen_request(self):
 
-    def what_do(self):
         try:
-            action = str(self.client.recv_chunk())
-            self.client.send_ack()
-
-            if action == UPLOAD:
-                self.upload()
-            elif action == DOWNLOAD:
-                print("not done")
-            elif action == "":
-                print("Client disconnect")
-                self.__close()
-            else:
-                print("Error: Invalid action " + action)
-                self.__close()
-
+            request = self.client.wait_for_request()
+            request = self.dispatch_request(request)
         except ConnectionAbortedError:
             print("An error ocurred and the connection was closed")
+        self.__close()
 
     def run(self):
-        self.thread = Thread(target=self.what_do)
+        self.thread = Thread(target=self.listen_request)
         self.thread.start()
 
     # closes the socket, for internal use only
