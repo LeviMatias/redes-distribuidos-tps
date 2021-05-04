@@ -1,54 +1,65 @@
 import os
 import socket
+from common_tcp import UPLOAD, CHUNK_SIZE, socket_tcp
 
-CHUNK_SIZE = 16
-OK_ACK = "Ok"
+BASE_PATH = "files-client/"
 
 
 class Client:
-    def __init__(self, addres_family, protocol):
-        self.sock = socket.socket(addres_family, protocol)
+    def __init__(self, serv):
+        self.serv = serv
 
-    def connect(self, host, port):
-        self.sock.connect((host, port))
+    def wait_ack(self):
+        if not self.serv.wait_ack():
+            print("do something?")
 
     def send(self, file_path):
+        serv = self.serv
+        # inform the server we want to upload
+        serv.send_chunk(UPLOAD)
+        self.wait_ack()
 
-        f = open(file_path, 'rb')
+        # open the file and send the name to the server
+        f = open(BASE_PATH + file_path, 'r')
+        serv.send_chunk(file_path)
+        self.wait_ack()
+
         f.seek(0, os.SEEK_END)
         size = f.tell()
         f.seek(0, os.SEEK_SET)
+        # send the file size to the server
+        serv.send_chunk(str(size))
+        self.wait_ack()
 
-        self.sock.send(str(size).encode())
-        ack = self.sock.recv(CHUNK_SIZE)
-        if ack.decode() != OK_ACK:
-            print("invalid ack received {}", ack.decode())
-            return exit()
-
+        # begin reading and sending data
         chunk = f.read(CHUNK_SIZE)
+        bytes_read = 0
+        self.progressBar(bytes_read, size)
         while chunk:
-            self.sock.send(chunk)
+            serv.send_chunk(chunk)
+            bytes_read += len(chunk)
+            self.progressBar(bytes_read, size)
             chunk = f.read(CHUNK_SIZE)
 
         f.close()
 
     def close(self):
-        self.sock.close()
+        self.serv.close()
 
-    def progressBar(current, total, barLength = 20):
+    def progressBar(self, current, total, barLength=20):
         percent = float(current) * 100 / total
-        arrow   = '-' * int(percent/100 * barLength - 1) + '>'
-        spaces  = ' ' * (barLength - len(arrow))
+        arrow = '-' * int(percent/100 * barLength - 1) + '>'
+        spaces = ' ' * (barLength - len(arrow))
 
         print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
 
 
 if __name__ == "__main__":
-    client = Client(socket.AF_INET, socket.SOCK_STREAM)
-
+    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = '127.0.0.1'
     port = 8080
+    serv.connect((host, port))
 
-    client.connect(host, port)
-    client.send("C:\\Users\\axelpm\\Desktop\\test.txt")
+    client = Client(socket_tcp(serv, (host, port)))
+    client.send("test.txt")
     client.close()

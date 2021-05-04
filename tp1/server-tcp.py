@@ -1,44 +1,54 @@
 import socket
 from threading import Thread
+from common_tcp import UPLOAD, DOWNLOAD, socket_tcp
 
-CHUNK_SIZE = 1024
-OK_ACK = "Ok"
+BASE_PATH = "files-server/"
 active_connections = []
 
 
 class connection_instance:
 
-    def __init__(self, cli, addr):
-        print("connection with "+ addr[0] + ":" + str(addr[1]) + " started")
+    def __init__(self, cli):
         self.client = cli
-        self.addr = addr
         self.closed = False
 
-    def receive(self):
-        bytes_recv = 0
-        size = int(self.client.recv(CHUNK_SIZE).decode())
-        self.client.send(b"Ok")
+    def upload(self):
+        # wait for file name!
+        name = str(self.client.recv_chunk())
+        if name == "":
+            return self.__close()
 
-        while bytes_recv < size:
-            data = self.client.recv(CHUNK_SIZE)
-            bytes_recv += len(data)
-            print(str(data.decode()))
+        self.client.send_ack()
+        self.upfile = open(name, "w+")
 
+        self.client.recv_to_file(self.upfile)
+
+        self.upfile.close()
+        self.upfile = None
         self.__close()
 
+    def what_do(self):
+        try:
+            action = str(self.client.recv_chunk())
+            self.client.send_ack()
+
+            if action == UPLOAD:
+                self.upload()
+            elif action == DOWNLOAD:
+                print("not done")
+            else:
+                print("Error: Invalid action " + action)
+                self.__close()
+
+        except ConnectionAbortedError:
+            print("An error ocurred and the connection was closed")
+
     def run(self):
-        self.thread = Thread(target=self.receive)
+        self.thread = Thread(target=self.what_do)
         self.thread.start()
 
     # closes the socket, for internal use only
     def __close(self):
-        if self.closed:
-            return
-
-        addr = self.addr
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " finished")
-        self.closed = True
-        self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
 
     # closes the socket and joins the thread
@@ -52,7 +62,7 @@ class connection_instance:
     # asks whether thread is done and joins it if necessary
     # for external use only
     def finished(self):
-        if self.closed:
+        if self.client.closed:
             self.close()
         return self.closed
 
@@ -67,14 +77,14 @@ def serve(host, port):
 
         while True:
             conn, addr = sock.accept()
-             # cull list from dead connections
+            # cull list from dead connections
             active_connections[:] = [c for c in active_connections
                                      if c.finished()]
 
             if not conn:
                 break
 
-            ci = connection_instance(conn, addr)
+            ci = connection_instance(socket_tcp(conn, addr))
             ci.run()
             active_connections.append(ci)
 
