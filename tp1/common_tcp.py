@@ -28,9 +28,7 @@ class socket_tcp:
     def send(self, data):
         return self.conn.send(data.encode())
 
-    def recive_file(self, file_name, size):
-
-        file = FileManager.open_file(name=file_name, how='w+')
+    def recive_file(self, file, size):
 
         bytes_recv = 0
         data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
@@ -45,12 +43,10 @@ class socket_tcp:
 
         data = self.recv()
         bytes_recived += len(data)
-        file.write(data.decode())
+        file.write(data)
         return data, bytes_recived
 
-    def send_file(self, file_name, size):
-
-        file = FileManager.open_file(name=file_name, how='r')
+    def send_file(self, file, size):
 
         bytes_sent = 0
         data, bytes_sent = self.read_file_and_send(file, bytes_sent)
@@ -71,7 +67,7 @@ class socket_tcp:
     def wait_ack(self):
         ack = self.recv()
         if ack != OK_ACK:
-            print("invalid ack received {}", ack.decode())
+            print(f"invalid ack received {ack}\n")
             return False
         return True
 
@@ -96,11 +92,9 @@ class socket_tcp:
     def send_ack(self):
         self.send(OK_ACK)
 
-    def send_size(self, file_name):
-        size = FileManager.get_size(file_name)
+    def send_size(self, size):
         self.send(str(size))
         self.wait_ack()
-        return size
 
     def close(self):
         if self.closed:
@@ -115,45 +109,44 @@ class socket_tcp:
 
 class FileManager:
 
-    BASE_PATH = "./files-client/"
+    def __init__(self, host):
+        self.CLIENT_BASE_PATH = "files-client/"
+        self.SERVER_BASE_PATH = "files-server/"
+        self.name_to_path = {
+            "from_client_test_upload.txt": "from_client_test_upload.txt",
+            "from_server_test_download.txt": "from_server_test_download.txt"}
+        self.path_to_name = dict((v, k) for k, v in self.name_to_path.items())
+        self.host = host
 
-    name_to_path = {
-        "test.txt": "test.txt",
-    }
+    def get_name(self, path):
+        return self.path_to_name[path]
 
-    path_to_name = dict((v, k) for k, v in name_to_path.items())
+    def get_path(self, name):
+        return self.name_to_path[name]
 
-    @staticmethod
-    def get_name(path):
-        return FileManager.path_to_name[path]
+    def get_absolute_path(self, file_path):
 
-    @staticmethod
-    def get_path(name):
-        return FileManager.name_to_path[name]
+        if self.host == 'server':
+            return self.SERVER_BASE_PATH + file_path
+        elif self.host == 'client':
+            return self.CLIENT_BASE_PATH + file_path
+        else:
+            raise(ConnectionAbortedError)
 
-    @staticmethod
-    def open_file(how, name='', path=''):
+    def open_file(self, how, name='', path=''):
 
         if name:
-            path = FileManager.name_to_path[name]
+            path = self.name_to_path[name]
 
-        f = open(FileManager.get_absolute_path(path), how)
+        full_path = self.get_absolute_path(path)
+        f = open(full_path, how)
 
         return f
 
-    @staticmethod
-    def get_absolute_path(file_path):
-        return FileManager.BASE_PATH + file_path
+    def get_size(self, file):
 
-    @staticmethod
-    def get_size(file_name):
-
-        f = FileManager.open_file(name=file_name, how='r')
-
-        f.seek(0, os.SEEK_END)
-        size = f.tell()
-        f.seek(0, os.SEEK_SET)
-
-        f.close()
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0, os.SEEK_SET)
 
         return size

@@ -1,6 +1,6 @@
 import socket
 from threading import Thread
-from common_tcp import UPLOAD, DOWNLOAD, socket_tcp
+from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
 
 BASE_PATH = "files-server/"
 active_connections = []
@@ -11,23 +11,27 @@ class connection_instance:
     def __init__(self, cli):
         self.client = cli
         self.closed = False
+        self.file_manager = FileManager('server')
 
     def __server_upload_protocol(self):
 
         file_name = self.client.wait_for_name()
         size = self.client.wait_for_size()
-        self.recive_file(file_name, size)
+
+        file = self.file_manager.open_file(name=file_name, how='w+')
+        self.client.recive_file(file, size)
 
     def __server_download_protocol(self):
 
         file_name = self.client.wait_for_name()
-        size = self.client.send_size(file_name)
-        self.send_file(file_name, size)
+
+        file = self.file_manager.open_file(name=file_name, how='r')
+        size = self.file_manager.get_size(file)
+        self.client.send_size(size)
+
+        self.client.send_file(file, size)
 
     def dispatch_request(self, request):
-        request = str(self.client.recv())
-        self.client.send_ack()
-
         if request == UPLOAD:
             self.__server_upload_protocol()
         elif request == DOWNLOAD:
