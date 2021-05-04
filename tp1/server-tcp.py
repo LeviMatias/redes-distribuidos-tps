@@ -36,6 +36,9 @@ class connection_instance:
                 self.upload()
             elif action == DOWNLOAD:
                 print("not done")
+            elif action == "":
+                print("Client disconnect")
+                self.__close()
             else:
                 print("Error: Invalid action " + action)
                 self.__close()
