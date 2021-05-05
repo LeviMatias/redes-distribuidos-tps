@@ -1,9 +1,8 @@
 import socket
 from threading import Thread
-from common_tcp import UPLOAD, DOWNLOAD, socket_tcp
+from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
 
 BASE_PATH = "files-server/"
-active_connections = []
 
 
 class connection_instance:
@@ -11,43 +10,45 @@ class connection_instance:
     def __init__(self, cli):
         self.client = cli
         self.closed = False
+        self.file_manager = FileManager('server')
 
-    def upload(self):
-        # wait for file name!
-        name = str(self.client.recv_chunk())
-        if name == "":
-            return self.__close()
+    def __server_upload_protocol(self):
 
-        self.client.send_ack()
-        self.upfile = open(name, "w+")
+        file_name = self.client.wait_for_name()
+        size = self.client.wait_for_size()
 
-        self.client.recv_to_file(self.upfile)
+        file = self.file_manager.open_file(name=file_name, how='w+')
+        self.client.recive_file(file, size)
 
-        self.upfile.close()
-        self.upfile = None
-        self.__close()
+    def __server_download_protocol(self):
 
-    def what_do(self):
+        file_name = self.client.wait_for_name()
+
+        file = self.file_manager.open_file(name=file_name, how='r')
+        size = self.file_manager.get_size(file)
+        self.client.send_size(size)
+
+        self.client.send_file(file, size)
+
+    def dispatch_request(self, request):
+        if request == UPLOAD:
+            self.__server_upload_protocol()
+        elif request == DOWNLOAD:
+            self.__server_download_protocol()
+        else:
+            raise(ConnectionAbortedError)
+
+    def listen_request(self):
+
         try:
-            action = str(self.client.recv_chunk())
-            self.client.send_ack()
-
-            if action == UPLOAD:
-                self.upload()
-            elif action == DOWNLOAD:
-                print("not done")
-            elif action == "":
-                print("Client disconnect")
-                self.__close()
-            else:
-                print("Error: Invalid action " + action)
-                self.__close()
-
+            request = self.client.wait_for_request()
+            request = self.dispatch_request(request)
         except ConnectionAbortedError:
             print("An error ocurred and the connection was closed")
+        self.__close()
 
     def run(self):
-        self.thread = Thread(target=self.what_do)
+        self.thread = Thread(target=self.listen_request)
         self.thread.start()
 
     # closes the socket, for internal use only
@@ -67,11 +68,13 @@ class connection_instance:
     def finished(self):
         if self.client.closed:
             self.close()
-        return self.closed
+        return self.client.closed
 
 
 def serve(host, port):
     addr = (host, port)
+    active_connections = []
+    
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(addr)

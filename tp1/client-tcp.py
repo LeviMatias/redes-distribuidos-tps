@@ -1,65 +1,75 @@
-import os
 import socket
-from common_tcp import UPLOAD, CHUNK_SIZE, socket_tcp
-
-BASE_PATH = "files-client/"
+from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
 
 
 class Client:
     def __init__(self, serv):
         self.serv = serv
+        self.file_manager = FileManager('client')
 
-    def wait_ack(self):
-        if not self.serv.wait_ack():
-            print("do something?")
+    def upload(self, file_path):
+        self.__data_transfer(file_path, self.__client_upload_protocol)
 
-    def send(self, file_path):
-        serv = self.serv
+    def download(self, file_path):
+        self.__data_transfer(file_path, self.__client_download_protocol)
+
+    def __client_upload_protocol(self, file_name):
+
         # inform the server we want to upload
-        serv.send_chunk(UPLOAD)
-        self.wait_ack()
+        self.serv.send(UPLOAD)
+        self.serv.wait_ack()
 
-        # open the file and send the name to the server
-        f = open(BASE_PATH + file_path, 'r')
-        serv.send_chunk(file_path)
-        self.wait_ack()
+        # send the name to the server
+        self.serv.send(file_name)
+        self.serv.wait_ack()
 
-        f.seek(0, os.SEEK_END)
-        size = f.tell()
-        f.seek(0, os.SEEK_SET)
         # send the file size to the server
-        serv.send_chunk(str(size))
-        self.wait_ack()
+        file = self.file_manager.open_file(name=file_name, how='r')
+        size = self.file_manager.get_size(file)
+        self.serv.send(str(size))
+        self.serv.wait_ack()
 
         # begin reading and sending data
-        chunk = f.read(CHUNK_SIZE)
-        bytes_read = 0
-        self.progressBar(bytes_read, size)
-        while chunk:
-            serv.send_chunk(chunk)
-            bytes_read += len(chunk)
-            self.progressBar(bytes_read, size)
-            chunk = f.read(CHUNK_SIZE)
+        self.serv.send_file(file, size)
 
-        f.close()
+    def __client_download_protocol(self, file_name):
+        # inform the server we want to upload
+        self.serv.send(DOWNLOAD)
+        self.serv.wait_ack()
+
+        # send the name to the server
+        self.serv.send(file_name)
+        self.serv.wait_ack()
+
+        # wait for the file size from the server
+        size = self.serv.wait_for_size()
+
+        # begin reading and sending data
+        file = self.file_manager.open_file(name=file_name, how='w+')
+        self.serv.recive_file(file, size)
+
+    def __data_transfer(self, file_path, protocol):
+        file_name = self.file_manager.get_name(file_path)
+        try:
+            protocol(file_name)
+        except ConnectionAbortedError:
+            print("An error ocurred and the connection was closed")
+        except FileNotFoundError:
+            path = self.file_manager.get_absolute_path(path=file_path)
+            print("No such file: ", path)
 
     def close(self):
         self.serv.close()
 
-    def progressBar(self, current, total, barLength=20):
-        percent = float(current) * 100 / total
-        arrow = '-' * int(percent/100 * barLength - 1) + '>'
-        spaces = ' ' * (barLength - len(arrow))
-
-        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
-
 
 if __name__ == "__main__":
+
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = '127.0.0.1'
     port = 8080
     serv.connect((host, port))
 
     client = Client(socket_tcp(serv, (host, port)))
-    client.send("test.txt")
+    #client.upload("from_client_test_upload.txt")
+    client.download("from_server_test_download.txt")
     client.close()
