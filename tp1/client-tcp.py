@@ -31,6 +31,7 @@ class Client:
 
         # begin reading and sending data
         self.serv.send_file(file, size)
+        file.close()
 
     def __client_download_protocol(self, file_name):
         # inform the server we want to upload
@@ -47,6 +48,7 @@ class Client:
         # begin reading and sending data
         file = self.file_manager.open_file(name=file_name, how='w+')
         self.serv.recive_file(file, size)
+        file.close()
 
     def __data_transfer(self, file_path, protocol):
         file_name = self.file_manager.get_name(file_path)

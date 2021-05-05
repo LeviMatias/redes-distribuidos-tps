@@ -19,6 +19,7 @@ class connection_instance:
 
         file = self.file_manager.open_file(name=file_name, how='w+')
         self.client.recive_file(file, size)
+        file.close()
 
     def __server_download_protocol(self):
 
@@ -29,6 +30,7 @@ class connection_instance:
         self.client.send_size(size)
 
         self.client.send_file(file, size)
+        file.close()
 
     def dispatch_request(self, request):
         if request == UPLOAD:
@@ -85,7 +87,7 @@ def serve(host, port):
             conn, addr = sock.accept()
             # cull list from dead connections
             active_connections[:] = [c for c in active_connections
-                                     if c.finished()]
+                                     if not c.finished()]
 
             if not conn:
                 break

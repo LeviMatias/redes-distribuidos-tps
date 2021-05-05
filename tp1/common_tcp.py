@@ -37,8 +37,6 @@ class socket_tcp:
             data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
             progressBar(bytes_recv, size)
 
-        file.close()
-
     def recv_and_reconstruct_file(self, file, bytes_recived):
 
         data = self.recv()
@@ -54,8 +52,6 @@ class socket_tcp:
         while bytes_sent < size and data:
             data, bytes_sent = self.read_file_and_send(file, bytes_sent)
             progressBar(bytes_sent, size)
-
-        file.close()
 
     def read_file_and_send(self, file, bytes_sent):
 
