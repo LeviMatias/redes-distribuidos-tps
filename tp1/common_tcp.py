@@ -28,7 +28,7 @@ class socket_tcp:
     def send(self, data):
         return self.conn.send(data.encode())
 
-    def recive_file(self, file, size):
+    def recv_file(self, file, size):
 
         bytes_recv = 0
         data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)

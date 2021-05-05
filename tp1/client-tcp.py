@@ -1,5 +1,6 @@
 import socket
 from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
+import traceback
 
 
 class Client:
@@ -59,6 +60,9 @@ class Client:
         except FileNotFoundError:
             path = self.file_manager.get_absolute_path(path=file_path)
             print("No such file: ", path)
+        finally:
+            traceback.print_stack()
+            traceback.print_exception()
 
     def close(self):
         self.serv.close()

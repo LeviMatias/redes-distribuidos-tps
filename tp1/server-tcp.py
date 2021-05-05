@@ -1,6 +1,7 @@
 import socket
 from threading import Thread
 from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
+import traceback
 
 BASE_PATH = "files-server/"
 
@@ -47,8 +48,11 @@ class connection_instance:
             request = self.dispatch_request(request)
         except ConnectionAbortedError:
             print("An error ocurred and the connection was closed")
-        self.__close()
-
+        finally:
+            traceback.print_stack()
+            traceback.print_exception()
+            self.__close()
+            
     def run(self):
         self.thread = Thread(target=self.listen_request)
         self.thread.start()
