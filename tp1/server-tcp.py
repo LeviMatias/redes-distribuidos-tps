@@ -3,7 +3,6 @@ from threading import Thread
 from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
 
 BASE_PATH = "files-server/"
-active_connections = []
 
 
 class connection_instance:
@@ -69,11 +68,13 @@ class connection_instance:
     def finished(self):
         if self.client.closed:
             self.close()
-        return self.closed
+        return self.client.closed
 
 
 def serve(host, port):
     addr = (host, port)
+    active_connections = []
+    
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(addr)
