@@ -102,13 +102,12 @@ class socket_tcp:
 class FileManager:
 
     def __init__(self, host):
-        self.CLIENT_BASE_PATH = "files-client/"
-        self.SERVER_BASE_PATH = "files-server/"
+        self.CLIENT_BASE_PATH = "lib/files-client/"
+        self.SERVER_BASE_PATH = "lib/files-server/"
         self.name_to_path = {
             "from_client_test_upload.txt": "from_client_test_upload.txt",
             "from_server_test_download.txt": "from_server_test_download.txt",
-            "from_client_large_file_upload.txt": 
-            "from_client_large_file_upload.txt"}
+            "client_large_file_upload.txt": "client_large_file_upload.txt"}
         self.path_to_name = dict((v, k) for k, v in self.name_to_path.items())
         self.host = host
 

@@ -1,6 +1,6 @@
 import socket
 from threading import Thread
-from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
+from lib.common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
 
 
 class connection_instance:
@@ -47,7 +47,7 @@ class connection_instance:
             Printer.print_connection_aborted()
         finally:
             self.__close()
-            
+
     def run(self):
         self.thread = Thread(target=self.listen_request)
         self.thread.start()
@@ -101,7 +101,3 @@ def serve(host, port):
             sock.close()
             for cli in active_connections:
                 cli.close()
-
-
-if __name__ == "__main__":
-    serve("localhost", 8080)

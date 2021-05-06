@@ -1,5 +1,4 @@
-import socket
-from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
+from lib.common_tcp import UPLOAD, DOWNLOAD, FileManager, Printer
 
 
 class Client:
@@ -62,17 +61,3 @@ class Client:
 
     def close(self):
         self.serv.close()
-
-
-if __name__ == "__main__":
-
-    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = '127.0.0.1'
-    port = 8080
-    serv.connect((host, port))
-
-    client = Client(socket_tcp(serv, (host, port)))
-    #client.upload("from_client_test_upload.txt")
-    #client.download("from_server_test_download.txt")
-    client.upload("from_client_large_file_upload.txt")
-    client.close()
