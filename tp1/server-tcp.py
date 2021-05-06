@@ -1,9 +1,6 @@
 import socket
 from threading import Thread
-from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
-import traceback
-
-BASE_PATH = "files-server/"
+from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
 
 
 class connection_instance:
@@ -19,7 +16,7 @@ class connection_instance:
         size = self.client.wait_for_size()
 
         file = self.file_manager.open_file(name=file_name, how='w+')
-        self.client.recive_file(file, size)
+        self.client.recv_file(file, size, from_host='server')
         file.close()
 
     def __server_download_protocol(self):
@@ -30,7 +27,7 @@ class connection_instance:
         size = self.file_manager.get_size(file)
         self.client.send_size(size)
 
-        self.client.send_file(file, size)
+        self.client.send_file(file, size, from_host='server')
         file.close()
 
     def dispatch_request(self, request):
@@ -47,10 +44,8 @@ class connection_instance:
             request = self.client.wait_for_request()
             request = self.dispatch_request(request)
         except ConnectionAbortedError:
-            print("An error ocurred and the connection was closed")
+            Printer.print_connection_aborted()
         finally:
-            traceback.print_stack()
-            traceback.print_exception()
             self.__close()
             
     def run(self):
@@ -80,12 +75,12 @@ class connection_instance:
 def serve(host, port):
     addr = (host, port)
     active_connections = []
-    
+
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(addr)
         sock.listen(1)
-        print("listening on " + addr[0] + ":" + str(addr[1]))
+        Printer.print_listening_on(addr)
 
         while True:
             conn, addr = sock.accept()
@@ -106,8 +101,6 @@ def serve(host, port):
             sock.close()
             for cli in active_connections:
                 cli.close()
-
-        print("goodbye")
 
 
 if __name__ == "__main__":

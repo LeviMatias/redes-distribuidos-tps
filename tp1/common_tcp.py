@@ -1,5 +1,6 @@
 import socket
 import os
+import traceback
 
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
@@ -7,20 +8,13 @@ CHUNK_SIZE = 1024
 OK_ACK = "Ok"
 
 
-def progressBar(current, total, barLength=20):
-    percent = float(current) * 100 / total
-    arrow = '-' * int(percent/100 * barLength - 1) + '>'
-    spaces = ' ' * (barLength - len(arrow))
-
-    print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
-
-
 class socket_tcp:
     def __init__(self, conn, addr):
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " started")
         self.conn = conn
         self.addr = addr
         self.closed = False
+
+        Printer.print_connection_established(addr)
 
     def recv(self):
         return self.conn.recv(CHUNK_SIZE).decode()
@@ -28,14 +22,16 @@ class socket_tcp:
     def send(self, data):
         return self.conn.send(data.encode())
 
-    def recv_file(self, file, size):
+    def recv_file(self, file, size, from_host):
 
         bytes_recv = 0
         data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
 
         while bytes_recv < size and data:
             data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
-            progressBar(bytes_recv, size)
+
+            if from_host == 'client':
+                Printer.progressBar(bytes_recv, size)
 
     def recv_and_reconstruct_file(self, file, bytes_recived):
 
@@ -44,14 +40,16 @@ class socket_tcp:
         file.write(data)
         return data, bytes_recived
 
-    def send_file(self, file, size):
+    def send_file(self, file, size, from_host):
 
         bytes_sent = 0
         data, bytes_sent = self.read_file_and_send(file, bytes_sent)
 
         while bytes_sent < size and data:
             data, bytes_sent = self.read_file_and_send(file, bytes_sent)
-            progressBar(bytes_sent, size)
+
+            if from_host == 'client':
+                Printer.progressBar(bytes_sent, size)
 
     def read_file_and_send(self, file, bytes_sent):
 
@@ -63,9 +61,7 @@ class socket_tcp:
     def wait_ack(self):
         ack = self.recv()
         if ack != OK_ACK:
-            print(f"invalid ack received {ack}\n")
-            return False
-        return True
+            raise(ConnectionAbortedError)
 
     def wait_for_request(self):
         return self._wait_for_string_msg()
@@ -97,7 +93,7 @@ class socket_tcp:
             return
 
         addr = self.addr
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " finished")
+        Printer.print_connection_finished(addr)
         self.closed = True
         self.conn.shutdown(socket.SHUT_RDWR)
         self.conn.close()
@@ -110,7 +106,9 @@ class FileManager:
         self.SERVER_BASE_PATH = "files-server/"
         self.name_to_path = {
             "from_client_test_upload.txt": "from_client_test_upload.txt",
-            "from_server_test_download.txt": "from_server_test_download.txt"}
+            "from_server_test_download.txt": "from_server_test_download.txt",
+            "from_client_large_file_upload.txt": 
+            "from_client_large_file_upload.txt"}
         self.path_to_name = dict((v, k) for k, v in self.name_to_path.items())
         self.host = host
 
@@ -146,3 +144,39 @@ class FileManager:
         file.seek(0, os.SEEK_SET)
 
         return size
+
+
+class Printer:
+
+    CONNECTION_ABORTED_MSG = "An error ocurred. Connection closed"
+    FILE_NOT_FOUND_MSG = "File not found at: "
+
+    @staticmethod
+    def print_connection_aborted():
+        print(Printer.CONNECTION_ABORTED_MSG)
+        traceback.print_exc()
+
+    @staticmethod
+    def print_file_not_found(path):
+        print(Printer.FILE_NOT_FOUND_MSG + path)
+        traceback.print_exc()
+
+    @staticmethod
+    def print_connection_established(addr):
+        print("connection with " + addr[0] + ":" + str(addr[1]) + " started")
+
+    @staticmethod
+    def print_connection_finished(addr):
+        print("connection with " + addr[0] + ":" + str(addr[1]) + " finished")
+
+    @staticmethod
+    def print_listening_on(addr):
+        print("listening on " + addr[0] + ":" + str(addr[1]))
+
+    @staticmethod
+    def progressBar(current, total, barLength=20):
+        percent = float(current) * 100 / total
+        arrow = '-' * int(percent/100 * barLength - 1) + '>'
+        spaces = ' ' * (barLength - len(arrow))
+
+        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')

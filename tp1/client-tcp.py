@@ -1,6 +1,5 @@
 import socket
-from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager
-import traceback
+from common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
 
 
 class Client:
@@ -31,7 +30,7 @@ class Client:
         self.serv.wait_ack()
 
         # begin reading and sending data
-        self.serv.send_file(file, size)
+        self.serv.send_file(file, size, from_host='client')
         file.close()
 
     def __client_download_protocol(self, file_name):
@@ -48,7 +47,7 @@ class Client:
 
         # begin reading and sending data
         file = self.file_manager.open_file(name=file_name, how='w+')
-        self.serv.recive_file(file, size)
+        self.serv.recv_file(file, size, from_host='client')
         file.close()
 
     def __data_transfer(self, file_path, protocol):
@@ -56,13 +55,10 @@ class Client:
         try:
             protocol(file_name)
         except ConnectionAbortedError:
-            print("An error ocurred and the connection was closed")
+            Printer.print_connection_aborted()
         except FileNotFoundError:
             path = self.file_manager.get_absolute_path(path=file_path)
-            print("No such file: ", path)
-        finally:
-            traceback.print_stack()
-            traceback.print_exception()
+            Printer.print_file_not_found(path)
 
     def close(self):
         self.serv.close()
@@ -77,5 +73,6 @@ if __name__ == "__main__":
 
     client = Client(socket_tcp(serv, (host, port)))
     #client.upload("from_client_test_upload.txt")
-    client.download("from_server_test_download.txt")
+    #client.download("from_server_test_download.txt")
+    client.upload("from_client_large_file_upload.txt")
     client.close()
