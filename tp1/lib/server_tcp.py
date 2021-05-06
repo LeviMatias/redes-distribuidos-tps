@@ -1,14 +1,14 @@
 import socket
 from threading import Thread
-from lib.common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
+from lib.common import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
 
 
 class connection_instance:
 
-    def __init__(self, cli):
+    def __init__(self, cli, dir_path):
         self.client = cli
         self.closed = False
-        self.file_manager = FileManager('server')
+        self.file_manager = FileManager('server', dir_path)
 
     def __server_upload_protocol(self):
 
@@ -72,7 +72,7 @@ class connection_instance:
         return self.client.closed
 
 
-def serve(host, port):
+def serve(host, port, dir_path):
     addr = (host, port)
     active_connections = []
 

@@ -101,9 +101,9 @@ class socket_tcp:
 
 class FileManager:
 
-    def __init__(self, host):
+    def __init__(self, host, dir_path):
         self.CLIENT_BASE_PATH = "lib/files-client/"
-        self.SERVER_BASE_PATH = "lib/files-server/"
+        self.SERVER_BASE_PATH = dir_path
         self.name_to_path = {
             "from_client_test_upload.txt": "from_client_test_upload.txt",
             "from_server_test_download.txt": "from_server_test_download.txt",
@@ -147,30 +147,34 @@ class FileManager:
 
 class Printer:
 
-    CONNECTION_ABORTED_MSG = "An error ocurred. Connection closed"
-    FILE_NOT_FOUND_MSG = "File not found at: "
+    @staticmethod
+    def __print(msg):
+        print(msg)
+        print()
 
     @staticmethod
     def print_connection_aborted():
-        print(Printer.CONNECTION_ABORTED_MSG)
+        Printer.__print('An error ocurred. Connection closed')
         traceback.print_exc()
 
     @staticmethod
     def print_file_not_found(path):
-        print(Printer.FILE_NOT_FOUND_MSG + path)
+        Printer.__print('File not found at: ' + path)
         traceback.print_exc()
 
     @staticmethod
     def print_connection_established(addr):
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " started")
+        msg = "connection with " + addr[0] + ":" + str(addr[1]) + " started"
+        Printer.__print(msg)
 
     @staticmethod
     def print_connection_finished(addr):
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " finished")
+        msg = "connection with " + addr[0] + ":" + str(addr[1]) + " finished"
+        Printer.__print(msg)
 
     @staticmethod
     def print_listening_on(addr):
-        print("listening on " + addr[0] + ":" + str(addr[1]))
+        Printer.__print("listening on " + addr[0] + ":" + str(addr[1]))
 
     @staticmethod
     def progressBar(current, total, barLength=20):

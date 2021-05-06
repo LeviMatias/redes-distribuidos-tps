@@ -1,4 +1,4 @@
-from lib.common_tcp import UPLOAD, DOWNLOAD, FileManager, Printer
+from lib.common import UPLOAD, DOWNLOAD, FileManager, Printer
 
 
 class Client:
