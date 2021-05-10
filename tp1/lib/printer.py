@@ -55,13 +55,6 @@ class DefaultPrinter(QuietPrinter):
     def print_listening_on(self, addr):
         self.__print("listening on " + addr[0] + ":" + str(addr[1]))
 
-    def progressBar(self, current, total, barLength=20):
-        percent = float(current) * 100 / total
-        arrow = '-' * int(percent/100 * barLength - 1) + '>'
-        spaces = ' ' * (barLength - len(arrow))
-
-        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
-
 
 class VerbosePrinter(DefaultPrinter):
 
@@ -81,3 +74,10 @@ class VerbosePrinter(DefaultPrinter):
         self._print(" Total bytes sent: " + str(total_sent))
         self._print(" Total bytes recvd: " + str(total_recv))
         self._print(" Total connection duration: " + str(conn_dur_in_secs))
+    
+    def progressBar(self, current, total, barLength=20):
+        percent = float(current) * 100 / total
+        arrow = '-' * int(percent/100 * barLength - 1) + '>'
+        spaces = ' ' * (barLength - len(arrow))
+
+        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
