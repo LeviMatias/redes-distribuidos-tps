@@ -1,4 +1,5 @@
 from lib.common import Printer
+from lib.printer import QuietPrinter, DefaultPrinter, VerbosePrinter
 
 
 class ArgParser:
@@ -74,16 +75,15 @@ class ArgParser:
         port = None
         file_path = None
         file_name = None
+        printer = DefaultPrinter()
 
         for i, arg in enumerate(argv):
             if arg == '-h':
                 Printer.print_client_help()
             if arg == '-v':
-                pass
-                #TODO se vuelve mas verboso sea lo que sea que signifique eso
+                printer = VerbosePrinter()
             if arg == '-q':
-                pass
-                #TODO se vuelve menos verboso sea lo que sea que signifique eso
+                printer = QuietPrinter()
             if arg == '-H':
                 addr = argv[i+1]
             if arg == '-p':
@@ -92,7 +92,7 @@ class ArgParser:
                 file_path = argv[i+1]
             if arg == '-n':
                 file_name = argv[i+1]
-        return addr, port, file_path, file_name
+        return addr, port, file_path, file_name, printer
 
     @staticmethod
     def parse_server_side(argv):
@@ -100,20 +100,19 @@ class ArgParser:
         addr = None
         port = None
         dir_path = None
+        printer = DefaultPrinter()
 
         for i, arg in enumerate(argv):
             if arg == '-h':
                 Printer.print_server_help()
             if arg == '-v':
-                pass
-                #TODO se vuelve mas verboso sea lo que sea que signifique eso
+                printer = VerbosePrinter()
             if arg == '-q':
-                pass
-                #TODO se vuelve menos verboso sea lo que sea que signifique eso
+                printer = QuietPrinter()
             if arg == '-H':
                 addr = argv[i+1]
             if arg == '-p':
                 port = argv[i+1]
             if arg == '-s':
                 dir_path = argv[i+1]
-        return addr, port, dir_path
+        return addr, port, dir_path, printer

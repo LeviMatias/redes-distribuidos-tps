@@ -9,14 +9,14 @@ if __name__ == "__main__":
 
     ArgParser.check_client_side_args(sys.argv)
 
-    host, port, file_name, file_path = ArgParser.parse_client_side(sys.argv)
+    host, port, f_name, f_path, _pr = ArgParser.parse_client_side(sys.argv)
 
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serv.connect((host, port))
 
-    if not file_path:
-        file_path = FileManager('client').get_path(file_name)
+    if not f_path:
+        f_path = FileManager('client').get_path(f_name)
 
     client = Client(socket_tcp(serv, (host, port)))
-    client.download(file_path)
+    client.download(f_path)
     client.close()
