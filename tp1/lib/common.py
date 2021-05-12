@@ -13,14 +13,20 @@ class socket_tcp:
         self.conn = conn
         self.addr = addr
         self.closed = False
+        self.bytes_recv = 0
+        self.bytes_sent = 0
 
         Printer.print_connection_established(addr)
 
     def recv(self):
-        return self.conn.recv(CHUNK_SIZE).decode()
+        r = self.conn.recv(CHUNK_SIZE).decode()
+        self.bytes_recv += len(r)
+        return r
 
     def send(self, data):
-        return self.conn.send(data.encode())
+        s = self.conn.send(data.encode())
+        self.bytes_sent += len(s)
+        return s
 
     def recv_file(self, file, size, from_host):
 
