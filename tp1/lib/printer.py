@@ -71,6 +71,7 @@ class VerbosePrinter(DefaultPrinter):
         self._print("Time elapsed: " + str(time_in_seconds) + " seconds")
 
     def print_connection_stats(self, total_sent, total_recv, conn_dur_in_secs):
+        self.__print(" ___________ ")
         self._print(" Total bytes sent: " + str(total_sent))
         self._print(" Total bytes recvd: " + str(total_recv))
         self._print(" Total connection duration: " + str(conn_dur_in_secs))

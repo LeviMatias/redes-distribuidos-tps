@@ -10,7 +10,7 @@ class ArgParser:
         '''
         excpected:
             args =
-            [file-upload|file-download]
+            [upload-file|download-file]
             [-h]
             [-v | -q]
             [-H ADDR ]
@@ -18,6 +18,9 @@ class ArgParser:
             [-d FILEPATH ]
             [-n FILENAME ]
         '''
+
+        assert len(arv)>0, 'command to short'
+        assert argv[0]=='upload-file' or argv[0]=='download-file', 'command name invalid'
 
         found_addr = False
         found_port = False
@@ -44,13 +47,16 @@ class ArgParser:
         '''
         excpected:
             args =
-            [start - server]
+            [start-server]
             [-h]
             [-v | -q]
             [-H ADDR ]
             [-p PORT ]
             [-s DIRPATH ]
         '''
+
+        assert len(arv)>0, 'command to short'
+        assert argv[0]=='start-server', 'command name invalid'
 
         found_addr = False
         found_port = False
@@ -79,7 +85,7 @@ class ArgParser:
 
         for i, arg in enumerate(argv):
             if arg == '-h':
-                Printer.print_client_help()
+                print_client_help()
             if arg == '-v':
                 printer = VerbosePrinter()
             if arg == '-q':
@@ -104,7 +110,7 @@ class ArgParser:
 
         for i, arg in enumerate(argv):
             if arg == '-h':
-                Printer.print_server_help()
+                print_server_help()
             if arg == '-v':
                 printer = VerbosePrinter()
             if arg == '-q':
@@ -116,3 +122,36 @@ class ArgParser:
             if arg == '-s':
                 dir_path = argv[i+1]
         return addr, port, dir_path, printer
+
+    @staticmethod
+    def print_server_help():
+
+        cmd_description = 'server command for providing data transfer of certain file path or name to a host address toghether with its port number'
+
+        print(f'''
+        {cmd_description}
+            optional arguments :
+            -h, --help show this help message and exit
+            -v, -- verbose increase output verbosity
+            -q, --quiet decrease output verbosity
+            -H, --host service IP address
+            -p, --port service port
+            -s, -- storage storage dir path
+        ''')
+
+    @staticmethod
+    def print_client_help():
+
+        cmd_description = 'client command for uploading or downloading certain file path or name to a host address toghether with its port number'
+
+        print(f'''
+        {cmd_description}
+            optional arguments :
+            -h, --help show this help message and exit
+            -v, -- verbose increase output verbosity
+            -q, --quiet decrease output verbosity
+            -H, --host server IP address
+            -p, --port server port
+            -d, --dst destination file path
+            -n, --name file name
+        ''')

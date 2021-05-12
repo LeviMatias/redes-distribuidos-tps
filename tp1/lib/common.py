@@ -1,6 +1,6 @@
 import socket
 import os
-import traceback
+import time
 
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
@@ -15,8 +15,7 @@ class socket_tcp:
         self.closed = False
         self.bytes_recv = 0
         self.bytes_sent = 0
-
-        Printer.print_connection_established(addr)
+        self.start_t = time.time()
 
     def recv(self):
         r = self.conn.recv(CHUNK_SIZE).decode()
@@ -28,7 +27,7 @@ class socket_tcp:
         self.bytes_sent += len(s)
         return s
 
-    def recv_file(self, file, size, from_host):
+    def recv_file(self, file, size, progress=(lambda _x, _y: None)):
 
         bytes_recv = 0
         data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
@@ -36,9 +35,9 @@ class socket_tcp:
         while bytes_recv < size and data:
             data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
 
-            if from_host == 'client':
-                Printer.progressBar(bytes_recv, size)
+            progress(bytes_recv, size)
 
+    # recv bytes and write them into a buffer(file), update local byte counter
     def recv_and_reconstruct_file(self, file, bytes_recived):
 
         data = self.recv()
@@ -46,7 +45,7 @@ class socket_tcp:
         file.write(data)
         return data, bytes_recived
 
-    def send_file(self, file, size, from_host):
+    def send_file(self, file, size, progress=(lambda _x, _y: None)):
 
         bytes_sent = 0
         data, bytes_sent = self.read_file_and_send(file, bytes_sent)
@@ -54,9 +53,10 @@ class socket_tcp:
         while bytes_sent < size and data:
             data, bytes_sent = self.read_file_and_send(file, bytes_sent)
 
-            if from_host == 'client':
-                Printer.progressBar(bytes_sent, size)
+            progress(bytes_sent, size)
 
+    # read a chunk from file buffer and send it thru the connection,
+    #  update local counter
     def read_file_and_send(self, file, bytes_sent):
 
         data = file.read(CHUNK_SIZE)
@@ -64,6 +64,7 @@ class socket_tcp:
         bytes_sent += len(data)
         return data, bytes_sent
 
+    # wait for other side to send OK_ACK
     def wait_ack(self):
         ack = self.recv()
         if ack != OK_ACK:
@@ -94,13 +95,13 @@ class socket_tcp:
         self.send(str(size))
         self.wait_ack()
 
+    # close the connection
     def close(self):
         if self.closed:
             return
 
-        addr = self.addr
-        Printer.print_connection_finished(addr)
         self.closed = True
+        self.time_alive = time.time() - self.start
         self.conn.shutdown(socket.SHUT_RDWR)
         self.conn.close()
 
@@ -149,43 +150,3 @@ class FileManager:
         file.seek(0, os.SEEK_SET)
 
         return size
-
-
-class Printer:
-
-    @staticmethod
-    def __print(msg):
-        print(msg)
-        print()
-
-    @staticmethod
-    def print_connection_aborted():
-        Printer.__print('An error ocurred. Connection closed')
-        traceback.print_exc()
-
-    @staticmethod
-    def print_file_not_found(path):
-        Printer.__print('File not found at: ' + path)
-        traceback.print_exc()
-
-    @staticmethod
-    def print_connection_established(addr):
-        msg = "connection with " + addr[0] + ":" + str(addr[1]) + " started"
-        Printer.__print(msg)
-
-    @staticmethod
-    def print_connection_finished(addr):
-        msg = "connection with " + addr[0] + ":" + str(addr[1]) + " finished"
-        Printer.__print(msg)
-
-    @staticmethod
-    def print_listening_on(addr):
-        Printer.__print("listening on " + addr[0] + ":" + str(addr[1]))
-
-    @staticmethod
-    def progressBar(current, total, barLength=20):
-        percent = float(current) * 100 / total
-        arrow = '-' * int(percent/100 * barLength - 1) + '>'
-        spaces = ' ' * (barLength - len(arrow))
-
-        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')

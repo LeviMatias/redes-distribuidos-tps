@@ -17,6 +17,6 @@ if __name__ == "__main__":
     if not f_name:
         f_name = FileManager('client').get_path(f_name)
 
-    client = Client(socket_tcp(serv, (host, port)))
+    client = Client(socket_tcp(serv, (host, port)), _pr)
     client.upload(f_name)
     client.close()

@@ -7,6 +7,6 @@ if __name__ == "__main__":
 
     ArgParser.check_server_side_args(sys.argv)
 
-    host, port, dir_path, _printer = ArgParser.parse_server_side(sys.argv)
+    host, port, dir_path, printer = ArgParser.parse_server_side(sys.argv)
 
-    serve(host, port, dir_path)
+    serve(host, port, dir_path, printer)

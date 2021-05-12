@@ -1,20 +1,29 @@
-from lib.common import UPLOAD, DOWNLOAD, FileManager, Printer
+from lib.common import UPLOAD, DOWNLOAD, FileManager
+import time
 
 
 class Client:
-    def __init__(self, serv):
+    def __init__(self, serv, printer):
         self.serv = serv
+        self.printer = printer
         self.file_manager = FileManager('client')
+        self.printer.print_connection_established()
 
+    # upload wrapper
     def upload(self, file_path):
         self.__data_transfer(file_path, self.__client_upload_protocol)
 
+    # download wrapper
     def download(self, file_path):
         self.__data_transfer(file_path, self.__client_download_protocol)
 
+    # actual concrete upload implementation
     def __client_upload_protocol(self, file_name):
+        start = time()
 
         # inform the server we want to upload
+
+        self.printer.print_begin_transfer(file_name)
         self.serv.send(UPLOAD)
         self.serv.wait_ack()
 
@@ -29,11 +38,18 @@ class Client:
         self.serv.wait_ack()
 
         # begin reading and sending data
-        self.serv.send_file(file, size, from_host='client')
+        self.serv.send_file(file, size, callback=self.printer.progressBar)
         file.close()
 
+        self.printer.print_bytes_sent(size)
+        self.printer.print_time_elapsed(time.time() - start)
+
+    # actual concrete download implementation
     def __client_download_protocol(self, file_name):
+        start = time()
+
         # inform the server we want to upload
+        self.printer.print_begin_transfer(file_name)
         self.serv.send(DOWNLOAD)
         self.serv.wait_ack()
 
@@ -46,18 +62,27 @@ class Client:
 
         # begin reading and sending data
         file = self.file_manager.open_file(name=file_name, how='w+')
-        self.serv.recv_file(file, size, from_host='client')
+        self.serv.recv_file(file, size, callback=self.printer.progressBar)
         file.close()
 
+        self.printer.print_bytes_recv(size)
+        self.printer.print_time_elapsed(time.time() - start)
+
+    # receives a file path and calls the specified protocol function
+    # to process the given file at the path
     def __data_transfer(self, file_path, protocol):
         file_name = self.file_manager.get_name(file_path)
         try:
             protocol(file_name)
         except ConnectionAbortedError:
-            Printer.print_connection_aborted()
+            self.printer.print_connection_aborted()
         except FileNotFoundError:
             path = self.file_manager.get_absolute_path(path=file_path)
-            Printer.print_file_not_found(path)
+            self.printer.print_file_not_found(path)
 
     def close(self):
         self.serv.close()
+        self.printer.print_connection_finished(self.serv.addr)
+        self.printer.print_connection_stats(self.serv.bytes_sent,
+                                            self.serv.bytes_recv,
+                                            self.serv.time_alive)
