@@ -115,35 +115,14 @@ class socket_tcp:
 class FileManager:
 
     def __init__(self, host, dir_path=None):
-        self.CLIENT_BASE_PATH = "lib/files-client/"
         self.SERVER_BASE_PATH = dir_path
         self.host = host
 
     def get_name(self, path):
         return path.split()[-1]
 
-    def get_path(self, _name):
-        if self.host == 'client':
-            return self.CLIENT_BASE_PATH
-        return self.SERVER_BASE_PATH
-
-    def get_absolute_path(self, file_path):
-
-        if self.host == 'server':
-            return self.SERVER_BASE_PATH + file_path
-        elif self.host == 'client':
-            return self.CLIENT_BASE_PATH + file_path
-        else:
-            raise(ConnectionAbortedError)
-
-    def open_file(self, how, name='', path=''):
-
-        if name:
-            path = self.get_path(name)
-
-        full_path = path+name
-        f = open(full_path, how)
-
+    def open_file(self, path, how):
+        f = open(path, how)
         return f
 
     def get_size(self, file):

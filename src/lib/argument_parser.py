@@ -95,7 +95,7 @@ class ArgParser:
                 file_path = argv[i+1]
             if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
-        return addr, port, file_path, file_name, printer
+        return addr, port, file_path+file_name, printer
 
     @staticmethod
     def parse_server_side(argv):

@@ -15,19 +15,19 @@ class connection_instance:
     # server side of the upload protocol
     def _server_upload_protocol(self):
 
-        file_name = self.client.wait_for_name()
+        path = self.client.wait_for_name()
         size = self.client.wait_for_size()
 
-        file = self.file_manager.open_file(name=file_name, how='wb')
+        file = self.file_manager.open_file(path=path, how='wb')
         self.client.recv_file(file, size)
         file.close()
 
     # server side of the download protocol
     def _server_download_protocol(self):
 
-        file_name = self.client.wait_for_name()
+        path = self.client.wait_for_name()
 
-        file = self.file_manager.open_file(name=file_name, how='rb')
+        file = self.file_manager.open_file(path=path, how='rb')
         size = self.file_manager.get_size(file)
         self.client.send_size(size)
 

@@ -1,2 +1,4 @@
 .idea
 setting.json
+/src/lib/files-client/*
+/src/lib/files-server/*
