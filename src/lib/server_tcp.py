@@ -46,12 +46,14 @@ class connection_instance:
 
     # listen for what the client wants to do
     def listen_request(self):
-
         try:
             request = self.client.wait_for_request()
             request = self.dispatch_request(request)
-        except (ConnectionAbortedError, ConnectionResetError):
-            self.printer.print_connection_aborted()
+        except (ConnectionAbortedError, ConnectionResetError,
+                ValueError):
+            self.printer.print_connection_aborted(printStackTrace=False)
+        except FileNotFoundError:
+            self.printer.print_file_not_found()
         finally:
             self._close()
 

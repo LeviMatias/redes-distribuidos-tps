@@ -6,12 +6,14 @@ class QuietPrinter:
         print(msg)
         print()
 
-    def print_connection_aborted(self):
+    def print_connection_aborted(self, printStackTrace):
         self._print('An error ocurred. Connection closed')
-        traceback.print_exc()
+        if printStackTrace:
+            traceback.print_exc()
 
-    def print_file_not_found(self, path):
-        self._print('File not found at: ' + path)
+    def print_file_not_found(self, path=None):
+        if path:
+            self._print('File not found at: ' + path)
         traceback.print_exc()
 
     def print_connection_established(self, addr):

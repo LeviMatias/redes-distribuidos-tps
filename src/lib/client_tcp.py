@@ -73,6 +73,8 @@ class Client:
     def __data_transfer(self, path, name, protocol):
         try:
             protocol(path, name)
+        except ValueError:
+            self.printer.print_connection_aborted(printStackTrace=False)
         except (ConnectionAbortedError, ConnectionResetError):
             self.printer.print_connection_aborted()
         except FileNotFoundError:
