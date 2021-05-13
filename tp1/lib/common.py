@@ -1,6 +1,6 @@
 import socket
 import os
-import traceback
+import time
 
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
@@ -13,16 +13,27 @@ class socket_tcp:
         self.conn = conn
         self.addr = addr
         self.closed = False
+        self.bytes_recv = 0
+        self.bytes_sent = 0
+        self.start_t = time.time()
 
-        Printer.print_connection_established(addr)
+    def recv_encoded_bytes(self):
+        r = self.conn.recv(CHUNK_SIZE)
+        self.bytes_recv += len(r)
+        return r
 
     def recv(self):
-        return self.conn.recv(CHUNK_SIZE).decode()
+        return self.recv_encoded_bytes().decode()
+
+    def send_encoded_bytes(self, bytes):
+        s = self.conn.send(bytes)
+        self.bytes_sent += s
+        return s
 
     def send(self, data):
-        return self.conn.send(data.encode())
+        return self.send_encoded_bytes(data.encode())
 
-    def recv_file(self, file, size, from_host):
+    def recv_file(self, file, size, progress=(lambda _x, _y: None)):
 
         bytes_recv = 0
         data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
@@ -30,17 +41,17 @@ class socket_tcp:
         while bytes_recv < size and data:
             data, bytes_recv = self.recv_and_reconstruct_file(file, bytes_recv)
 
-            if from_host == 'client':
-                Printer.progressBar(bytes_recv, size)
+            progress(bytes_recv, size)
 
+    # recv bytes and write them into a buffer(file), update local byte counter
     def recv_and_reconstruct_file(self, file, bytes_recived):
 
-        data = self.recv()
+        data = self.recv_encoded_bytes()
         bytes_recived += len(data)
         file.write(data)
         return data, bytes_recived
 
-    def send_file(self, file, size, from_host):
+    def send_file(self, file, size, progress=(lambda _x, _y: None)):
 
         bytes_sent = 0
         data, bytes_sent = self.read_file_and_send(file, bytes_sent)
@@ -48,16 +59,18 @@ class socket_tcp:
         while bytes_sent < size and data:
             data, bytes_sent = self.read_file_and_send(file, bytes_sent)
 
-            if from_host == 'client':
-                Printer.progressBar(bytes_sent, size)
+            progress(bytes_sent, size)
 
+    # read a chunk from file buffer and send it thru the connection,
+    #  update local counter
     def read_file_and_send(self, file, bytes_sent):
 
         data = file.read(CHUNK_SIZE)
-        self.send(data)
+        self.send_encoded_bytes(data)
         bytes_sent += len(data)
         return data, bytes_sent
 
+    # wait for other side to send OK_ACK
     def wait_ack(self):
         ack = self.recv()
         if ack != OK_ACK:
@@ -88,34 +101,31 @@ class socket_tcp:
         self.send(str(size))
         self.wait_ack()
 
+    # close the connection
     def close(self):
         if self.closed:
             return
 
-        addr = self.addr
-        Printer.print_connection_finished(addr)
         self.closed = True
+        self.time_alive = time.time() - self.start_t
         self.conn.shutdown(socket.SHUT_RDWR)
         self.conn.close()
 
 
 class FileManager:
 
-    def __init__(self, host):
+    def __init__(self, host, dir_path=None):
         self.CLIENT_BASE_PATH = "lib/files-client/"
-        self.SERVER_BASE_PATH = "lib/files-server/"
-        self.name_to_path = {
-            "from_client_test_upload.txt": "from_client_test_upload.txt",
-            "from_server_test_download.txt": "from_server_test_download.txt",
-            "client_large_file_upload.txt": "client_large_file_upload.txt"}
-        self.path_to_name = dict((v, k) for k, v in self.name_to_path.items())
+        self.SERVER_BASE_PATH = dir_path
         self.host = host
 
     def get_name(self, path):
-        return self.path_to_name[path]
+        return path.split()[-1]
 
-    def get_path(self, name):
-        return self.name_to_path[name]
+    def get_path(self, _name):
+        if self.host == 'client':
+            return self.CLIENT_BASE_PATH
+        return self.SERVER_BASE_PATH
 
     def get_absolute_path(self, file_path):
 
@@ -129,9 +139,9 @@ class FileManager:
     def open_file(self, how, name='', path=''):
 
         if name:
-            path = self.name_to_path[name]
+            path = self.get_path(name)
 
-        full_path = self.get_absolute_path(path)
+        full_path = path+name
         f = open(full_path, how)
 
         return f
@@ -143,39 +153,3 @@ class FileManager:
         file.seek(0, os.SEEK_SET)
 
         return size
-
-
-class Printer:
-
-    CONNECTION_ABORTED_MSG = "An error ocurred. Connection closed"
-    FILE_NOT_FOUND_MSG = "File not found at: "
-
-    @staticmethod
-    def print_connection_aborted():
-        print(Printer.CONNECTION_ABORTED_MSG)
-        traceback.print_exc()
-
-    @staticmethod
-    def print_file_not_found(path):
-        print(Printer.FILE_NOT_FOUND_MSG + path)
-        traceback.print_exc()
-
-    @staticmethod
-    def print_connection_established(addr):
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " started")
-
-    @staticmethod
-    def print_connection_finished(addr):
-        print("connection with " + addr[0] + ":" + str(addr[1]) + " finished")
-
-    @staticmethod
-    def print_listening_on(addr):
-        print("listening on " + addr[0] + ":" + str(addr[1]))
-
-    @staticmethod
-    def progressBar(current, total, barLength=20):
-        percent = float(current) * 100 / total
-        arrow = '-' * int(percent/100 * barLength - 1) + '>'
-        spaces = ' ' * (barLength - len(arrow))
-
-        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')

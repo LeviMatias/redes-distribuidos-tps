@@ -1,65 +1,75 @@
 import socket
 from threading import Thread
-from lib.common_tcp import UPLOAD, DOWNLOAD, socket_tcp, FileManager, Printer
+from lib.common import UPLOAD, DOWNLOAD, socket_tcp, FileManager
 
 
 class connection_instance:
 
-    def __init__(self, cli):
+    def __init__(self, cli, dir_path, printer):
         self.client = cli
         self.closed = False
-        self.file_manager = FileManager('server')
+        self.printer = printer
+        self.file_manager = FileManager('server', dir_path)
+        printer.print_connection_established(cli.addr)
 
-    def __server_upload_protocol(self):
+    # server side of the upload protocol
+    def _server_upload_protocol(self):
 
         file_name = self.client.wait_for_name()
         size = self.client.wait_for_size()
 
-        file = self.file_manager.open_file(name=file_name, how='w+')
-        self.client.recv_file(file, size, from_host='server')
+        file = self.file_manager.open_file(name=file_name, how='wb')
+        self.client.recv_file(file, size)
         file.close()
 
-    def __server_download_protocol(self):
+    # server side of the download protocol
+    def _server_download_protocol(self):
 
         file_name = self.client.wait_for_name()
 
-        file = self.file_manager.open_file(name=file_name, how='r')
+        file = self.file_manager.open_file(name=file_name, how='rb')
         size = self.file_manager.get_size(file)
         self.client.send_size(size)
 
-        self.client.send_file(file, size, from_host='server')
+        self.client.send_file(file, size)
         file.close()
 
+    # choose handler for the request
     def dispatch_request(self, request):
         if request == UPLOAD:
-            self.__server_upload_protocol()
+            self._server_upload_protocol()
         elif request == DOWNLOAD:
-            self.__server_download_protocol()
+            self._server_download_protocol()
         else:
             raise(ConnectionAbortedError)
 
+    # listen for what the client wants to do
     def listen_request(self):
 
         try:
             request = self.client.wait_for_request()
             request = self.dispatch_request(request)
-        except ConnectionAbortedError:
-            Printer.print_connection_aborted()
+        except (ConnectionAbortedError, ConnectionResetError):
+            self.printer.print_connection_aborted()
         finally:
-            self.__close()
+            self._close()
 
     def run(self):
         self.thread = Thread(target=self.listen_request)
         self.thread.start()
 
     # closes the socket, for internal use only
-    def __close(self):
+    def _close(self):
         self.client.close()
+        self.printer.print_connection_finished(self.client.addr)
+        self.printer.print_connection_stats(self.client.bytes_sent,
+                                            self.client.bytes_recv,
+                                            self.client.time_alive)
 
     # closes the socket and joins the thread
     # for external use only
     def close(self):
-        self.__close()
+        self._close()
         if self.thread:
             self.thread.join()
             self.thread = False
@@ -72,7 +82,7 @@ class connection_instance:
         return self.client.closed
 
 
-def serve(host, port):
+def serve(host, port, dir_path, printer):
     addr = (host, port)
     active_connections = []
 
@@ -80,7 +90,7 @@ def serve(host, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(addr)
         sock.listen(1)
-        Printer.print_listening_on(addr)
+        printer.print_listening_on(addr)
 
         while True:
             conn, addr = sock.accept()
@@ -91,7 +101,7 @@ def serve(host, port):
             if not conn:
                 break
 
-            ci = connection_instance(socket_tcp(conn, addr))
+            ci = connection_instance(socket_tcp(conn, addr), dir_path, printer)
             ci.run()
             active_connections.append(ci)
 
