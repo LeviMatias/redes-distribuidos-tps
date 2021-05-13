@@ -9,15 +9,16 @@ class connection_instance:
         self.client = cli
         self.closed = False
         self.printer = printer
-        self.file_manager = FileManager('server', dir_path)
+        self.file_manager = FileManager(dir_path)
         printer.print_connection_established(cli.addr)
 
     # server side of the upload protocol
     def _server_upload_protocol(self):
 
-        path = self.client.wait_for_name()
+        name = self.client.wait_for_name()
         size = self.client.wait_for_size()
 
+        path = self.file_manager.SERVER_BASE_PATH + name
         file = self.file_manager.open_file(path=path, how='wb')
         self.client.recv_file(file, size)
         file.close()

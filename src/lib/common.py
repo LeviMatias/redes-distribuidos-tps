@@ -114,9 +114,8 @@ class socket_tcp:
 
 class FileManager:
 
-    def __init__(self, host, dir_path=None):
+    def __init__(self, dir_path=None):
         self.SERVER_BASE_PATH = dir_path
-        self.host = host
 
     def get_name(self, path):
         return path.split()[-1]

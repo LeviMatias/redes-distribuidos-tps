@@ -82,7 +82,10 @@ class ArgParser:
 
         for i, arg in enumerate(argv):
             if arg == '-h' or arg == '--help':
-                ArgParser.print_server_help()
+                if argv[0] == 'upload-file':
+                    ArgParser.print_upload_help()
+                elif argv[0] == 'download-file':
+                    ArgParser.print_download_help()
             if arg == '-v' or arg == '--verbose':
                 printer = VerbosePrinter()
             if arg == '-q' or arg == '--quiet':
@@ -95,7 +98,7 @@ class ArgParser:
                 file_path = argv[i+1]
             if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
-        return addr, port, file_path+file_name, printer
+        return addr, port, file_path, file_name, printer
 
     @staticmethod
     def parse_server_side(argv):
@@ -139,9 +142,9 @@ class ArgParser:
         ''')
 
     @staticmethod
-    def print_client_help():
+    def print_upload_help():
 
-        cmd_description = '''client command for uploading or downloading certain
+        cmd_description = '''client command for uploading certain
          file path or name to a host address toghether with its port number'''
 
         print(f'''
@@ -152,6 +155,24 @@ class ArgParser:
             -q, --quiet decrease output verbosity
             -H, --host server IP address
             -p, --port server port
-            -d, --dst destination file path
+            -d, --destination file path
+            -n, --name file name
+        ''')
+
+    @staticmethod
+    def print_download_help():
+
+        cmd_description = '''client command for downloading certain
+         file path or name to a host address toghether with its port number'''
+
+        print(f'''
+        {cmd_description}
+            optional arguments :
+            -h, --help show this help message and exit
+            -v, -- verbose increase output verbosity
+            -q, --quiet decrease output verbosity
+            -H, --host server IP address
+            -p, --port server port
+            -d, --source file path
             -n, --name file name
         ''')
