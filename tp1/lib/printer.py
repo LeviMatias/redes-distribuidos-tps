@@ -53,14 +53,14 @@ class DefaultPrinter(QuietPrinter):
         self._print(" ______ ")
         self._print(msg)
 
+    def print_begin_transfer(self, filename):
+        self._print("Begin of transfer sequence for: " + filename)
+
     def print_listening_on(self, addr):
         self._print("listening on " + addr[0] + ":" + str(addr[1]))
 
 
 class VerbosePrinter(DefaultPrinter):
-
-    def print_begin_transfer(self, filename):
-        self._print("Begin of transfer sequence for: " + filename)
 
     def print_bytes_sent(self, b):
         self._print("Bytes sent: " + str(b))

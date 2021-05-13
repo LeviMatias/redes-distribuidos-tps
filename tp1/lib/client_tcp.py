@@ -62,7 +62,7 @@ class Client:
 
         # begin reading and sending data
         file = self.file_manager.open_file(name=file_name, how='wb')
-        self.serv.recv_file(file, size, callback=self.printer.progressBar)
+        self.serv.recv_file(file, size, self.printer.progressBar)
         file.close()
 
         self.printer.print_bytes_recv(size)
