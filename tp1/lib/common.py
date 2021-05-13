@@ -17,15 +17,21 @@ class socket_tcp:
         self.bytes_sent = 0
         self.start_t = time.time()
 
-    def recv(self):
-        r = self.conn.recv(CHUNK_SIZE).decode()
+    def recv_encoded_bytes(self):
+        r = self.conn.recv(CHUNK_SIZE)
         self.bytes_recv += len(r)
         return r
 
-    def send(self, data):
-        s = self.conn.send(data.encode())
-        self.bytes_sent += len(s)
+    def recv(self):
+        return self.recv_encoded_bytes().decode()
+
+    def send_encoded_bytes(self, bytes):
+        s = self.conn.send(bytes)
+        self.bytes_sent += s
         return s
+
+    def send(self, data):
+        return self.send_encoded_bytes(data.encode())
 
     def recv_file(self, file, size, progress=(lambda _x, _y: None)):
 
@@ -40,7 +46,7 @@ class socket_tcp:
     # recv bytes and write them into a buffer(file), update local byte counter
     def recv_and_reconstruct_file(self, file, bytes_recived):
 
-        data = self.recv()
+        data = self.recv_encoded_bytes()
         bytes_recived += len(data)
         file.write(data)
         return data, bytes_recived
@@ -60,7 +66,7 @@ class socket_tcp:
     def read_file_and_send(self, file, bytes_sent):
 
         data = file.read(CHUNK_SIZE)
-        self.send(data)
+        self.send_encoded_bytes(data)
         bytes_sent += len(data)
         return data, bytes_sent
 
@@ -101,28 +107,25 @@ class socket_tcp:
             return
 
         self.closed = True
-        self.time_alive = time.time() - self.start
+        self.time_alive = time.time() - self.start_t
         self.conn.shutdown(socket.SHUT_RDWR)
         self.conn.close()
 
 
 class FileManager:
 
-    def __init__(self, host, dir_path):
+    def __init__(self, host, dir_path=None):
         self.CLIENT_BASE_PATH = "lib/files-client/"
         self.SERVER_BASE_PATH = dir_path
-        self.name_to_path = {
-            "from_client_test_upload.txt": "from_client_test_upload.txt",
-            "from_server_test_download.txt": "from_server_test_download.txt",
-            "client_large_file_upload.txt": "client_large_file_upload.txt"}
-        self.path_to_name = dict((v, k) for k, v in self.name_to_path.items())
         self.host = host
 
     def get_name(self, path):
-        return self.path_to_name[path]
+        return path.split()[-1]
 
-    def get_path(self, name):
-        return self.name_to_path[name]
+    def get_path(self, _name):
+        if self.host == 'client':
+            return self.CLIENT_BASE_PATH
+        return self.SERVER_BASE_PATH
 
     def get_absolute_path(self, file_path):
 
@@ -136,9 +139,9 @@ class FileManager:
     def open_file(self, how, name='', path=''):
 
         if name:
-            path = self.name_to_path[name]
+            path = self.get_path(name)
 
-        full_path = self.get_absolute_path(path)
+        full_path = path+name
         f = open(full_path, how)
 
         return f

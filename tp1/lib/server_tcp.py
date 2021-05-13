@@ -13,21 +13,21 @@ class connection_instance:
         printer.print_connection_established(cli.addr)
 
     # server side of the upload protocol
-    def __server_upload_protocol(self):
+    def _server_upload_protocol(self):
 
         file_name = self.client.wait_for_name()
         size = self.client.wait_for_size()
 
-        file = self.file_manager.open_file(name=file_name, how='w+')
+        file = self.file_manager.open_file(name=file_name, how='wb')
         self.client.recv_file(file, size)
         file.close()
 
     # server side of the download protocol
-    def __server_download_protocol(self):
+    def _server_download_protocol(self):
 
         file_name = self.client.wait_for_name()
 
-        file = self.file_manager.open_file(name=file_name, how='r')
+        file = self.file_manager.open_file(name=file_name, how='rb')
         size = self.file_manager.get_size(file)
         self.client.send_size(size)
 
@@ -37,9 +37,9 @@ class connection_instance:
     # choose handler for the request
     def dispatch_request(self, request):
         if request == UPLOAD:
-            self.__server_upload_protocol()
+            self._server_upload_protocol()
         elif request == DOWNLOAD:
-            self.__server_download_protocol()
+            self._server_download_protocol()
         else:
             raise(ConnectionAbortedError)
 
@@ -49,10 +49,10 @@ class connection_instance:
         try:
             request = self.client.wait_for_request()
             request = self.dispatch_request(request)
-        except ConnectionAbortedError:
+        except (ConnectionAbortedError, ConnectionResetError):
             self.printer.print_connection_aborted()
         finally:
-            self.__close()
+            self._close()
 
     def run(self):
         self.thread = Thread(target=self.listen_request)
@@ -101,7 +101,7 @@ def serve(host, port, dir_path, printer):
             if not conn:
                 break
 
-            ci = connection_instance(socket_tcp(conn, addr), printer)
+            ci = connection_instance(socket_tcp(conn, addr), dir_path, printer)
             ci.run()
             active_connections.append(ci)
 

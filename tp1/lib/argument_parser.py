@@ -1,4 +1,3 @@
-from lib.common import Printer
 from lib.printer import QuietPrinter, DefaultPrinter, VerbosePrinter
 
 
@@ -19,8 +18,7 @@ class ArgParser:
             [-n FILENAME ]
         '''
 
-        assert len(arv)>0, 'command to short'
-        assert argv[0]=='upload-file' or argv[0]=='download-file', 'command name invalid'
+        assert len(argv) > 0, 'command to short'
 
         found_addr = False
         found_port = False
@@ -28,13 +26,13 @@ class ArgParser:
         found_file_name = False
 
         for arg in argv:
-            if arg == '-H':
+            if arg == '-H' or arg == '--host':
                 found_addr = True
-            if arg == '-p':
+            if arg == '-p' or arg == '--port':
                 found_port = True
-            if arg == '-d':
+            if arg == '-d' or arg == "--dst":
                 found_file_path = True
-            if arg == '-n':
+            if arg == '-n' or arg == "--name":
                 found_file_name = True
 
         assert found_addr, 'missing host address'
@@ -55,19 +53,18 @@ class ArgParser:
             [-s DIRPATH ]
         '''
 
-        assert len(arv)>0, 'command to short'
-        assert argv[0]=='start-server', 'command name invalid'
+        assert len(argv) > 0, 'command to short'
 
         found_addr = False
         found_port = False
         found_dir_path = False
 
         for arg in argv:
-            if arg == '-H':
+            if arg == '-H' or arg == '--host':
                 found_addr = True
-            if arg == '-p':
+            if arg == '-p' or arg == '--port':
                 found_port = True
-            if arg == '-s':
+            if arg == '-s' or arg == '--src':
                 found_dir_path = True
 
         assert found_addr, 'missing host address'
@@ -84,19 +81,19 @@ class ArgParser:
         printer = DefaultPrinter()
 
         for i, arg in enumerate(argv):
-            if arg == '-h':
-                print_client_help()
-            if arg == '-v':
+            if arg == '-h' or arg == '--help':
+                ArgParser.print_server_help()
+            if arg == '-v' or arg == '--verbose':
                 printer = VerbosePrinter()
-            if arg == '-q':
+            if arg == '-q' or arg == '--quiet':
                 printer = QuietPrinter()
-            if arg == '-H':
+            if arg == '-H' or arg == '--host':
                 addr = argv[i+1]
-            if arg == '-p':
-                port = argv[i+1]
-            if arg == '-d':
+            if arg == '-p' or arg == '--port':
+                port = int(argv[i+1])
+            if arg == '-d' or arg == "--dst":
                 file_path = argv[i+1]
-            if arg == '-n':
+            if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
         return addr, port, file_path, file_name, printer
 
@@ -109,24 +106,26 @@ class ArgParser:
         printer = DefaultPrinter()
 
         for i, arg in enumerate(argv):
-            if arg == '-h':
-                print_server_help()
-            if arg == '-v':
+            if arg == '-h' or arg == '--help':
+                ArgParser.print_server_help()
+            if arg == '-v' or arg == '--verbose':
                 printer = VerbosePrinter()
-            if arg == '-q':
+            if arg == '-q' or arg == '--quiet':
                 printer = QuietPrinter()
-            if arg == '-H':
+            if arg == '-H' or arg == '--host':
                 addr = argv[i+1]
-            if arg == '-p':
-                port = argv[i+1]
-            if arg == '-s':
+            if arg == '-p' or arg == '--port':
+                port = int(argv[i+1])
+            if arg == '-s' or arg == '--src':
                 dir_path = argv[i+1]
         return addr, port, dir_path, printer
 
     @staticmethod
     def print_server_help():
 
-        cmd_description = 'server command for providing data transfer of certain file path or name to a host address toghether with its port number'
+        cmd_description = '''
+        server command for providing data transfer of certain
+         file path or name to a host address toghether with its port number'''
 
         print(f'''
         {cmd_description}
@@ -142,7 +141,8 @@ class ArgParser:
     @staticmethod
     def print_client_help():
 
-        cmd_description = 'client command for uploading or downloading certain file path or name to a host address toghether with its port number'
+        cmd_description = '''client command for uploading or downloading certain
+         file path or name to a host address toghether with its port number'''
 
         print(f'''
         {cmd_description}

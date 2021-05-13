@@ -7,7 +7,7 @@ class Client:
         self.serv = serv
         self.printer = printer
         self.file_manager = FileManager('client')
-        self.printer.print_connection_established()
+        self.printer.print_connection_established(serv.addr)
 
     # upload wrapper
     def upload(self, file_path):
@@ -19,7 +19,7 @@ class Client:
 
     # actual concrete upload implementation
     def __client_upload_protocol(self, file_name):
-        start = time()
+        start = time.time()
 
         # inform the server we want to upload
 
@@ -32,13 +32,13 @@ class Client:
         self.serv.wait_ack()
 
         # send the file size to the server
-        file = self.file_manager.open_file(name=file_name, how='r')
+        file = self.file_manager.open_file(name=file_name, how='rb')
         size = self.file_manager.get_size(file)
         self.serv.send(str(size))
         self.serv.wait_ack()
 
         # begin reading and sending data
-        self.serv.send_file(file, size, callback=self.printer.progressBar)
+        self.serv.send_file(file, size, self.printer.progressBar)
         file.close()
 
         self.printer.print_bytes_sent(size)
@@ -46,7 +46,7 @@ class Client:
 
     # actual concrete download implementation
     def __client_download_protocol(self, file_name):
-        start = time()
+        start = time.time()
 
         # inform the server we want to upload
         self.printer.print_begin_transfer(file_name)
@@ -61,7 +61,7 @@ class Client:
         size = self.serv.wait_for_size()
 
         # begin reading and sending data
-        file = self.file_manager.open_file(name=file_name, how='w+')
+        file = self.file_manager.open_file(name=file_name, how='wb')
         self.serv.recv_file(file, size, callback=self.printer.progressBar)
         file.close()
 
@@ -74,10 +74,10 @@ class Client:
         file_name = self.file_manager.get_name(file_path)
         try:
             protocol(file_name)
-        except ConnectionAbortedError:
+        except (ConnectionAbortedError, ConnectionResetError):
             self.printer.print_connection_aborted()
         except FileNotFoundError:
-            path = self.file_manager.get_absolute_path(path=file_path)
+            path = self.file_manager.get_absolute_path(file_path)
             self.printer.print_file_not_found(path)
 
     def close(self):
