@@ -26,6 +26,8 @@ class ArgParser:
         found_file_name = False
 
         for arg in argv:
+            if arg == '-h' or arg == '--help':
+                return
             if arg == '-H' or arg == '--host':
                 found_addr = True
             if arg == '-p' or arg == '--port':
@@ -60,6 +62,8 @@ class ArgParser:
         found_dir_path = False
 
         for arg in argv:
+            if arg == '-h' or arg == '--help':
+                return
             if arg == '-H' or arg == '--host':
                 found_addr = True
             if arg == '-p' or arg == '--port':
@@ -74,6 +78,7 @@ class ArgParser:
     @staticmethod
     def parse_client_side(argv):
 
+        help = False
         addr = None
         port = None
         file_path = None
@@ -86,6 +91,7 @@ class ArgParser:
                     ArgParser.print_upload_help()
                 elif argv[0] == 'download-file':
                     ArgParser.print_download_help()
+                help = True
             if arg == '-v' or arg == '--verbose':
                 printer = VerbosePrinter()
             if arg == '-q' or arg == '--quiet':
@@ -98,11 +104,12 @@ class ArgParser:
                 file_path = argv[i+1]
             if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
-        return addr, port, file_path, file_name, printer
+        return help, addr, port, file_path, file_name, printer
 
     @staticmethod
     def parse_server_side(argv):
 
+        help = False
         addr = None
         port = None
         dir_path = None
@@ -111,6 +118,7 @@ class ArgParser:
         for i, arg in enumerate(argv):
             if arg == '-h' or arg == '--help':
                 ArgParser.print_server_help()
+                help = True
             if arg == '-v' or arg == '--verbose':
                 printer = VerbosePrinter()
             if arg == '-q' or arg == '--quiet':
@@ -121,14 +129,15 @@ class ArgParser:
                 port = int(argv[i+1])
             if arg == '-s' or arg == '--src':
                 dir_path = argv[i+1]
-        return addr, port, dir_path, printer
+        return help, addr, port, dir_path, printer
 
     @staticmethod
     def print_server_help():
 
         cmd_description = '''
         server command for providing data transfer of certain
-         file path or name to a host address toghether with its port number'''
+         file path or name to a host address toghether with its port number
+         '''
 
         print(f'''
         {cmd_description}
@@ -145,7 +154,8 @@ class ArgParser:
     def print_upload_help():
 
         cmd_description = '''client command for uploading certain
-         file path or name to a host address toghether with its port number'''
+         file path or name to a host address toghether with its port number
+         '''
 
         print(f'''
         {cmd_description}
@@ -163,7 +173,8 @@ class ArgParser:
     def print_download_help():
 
         cmd_description = '''client command for downloading certain
-         file path or name to a host address toghether with its port number'''
+         file path or name to a host address toghether with its port number
+         '''
 
         print(f'''
         {cmd_description}
