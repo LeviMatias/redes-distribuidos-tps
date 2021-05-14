@@ -43,6 +43,12 @@ class QuietPrinter:
     def print_begin_transfer(self, filename):
         pass
 
+    def print_download_finished(self, filename):
+        self._print("Download of "+filename+" finished")
+
+    def print_upload_finished(self, filename):
+        self._print("Upload of "+filename+" finished")
+
 
 class DefaultPrinter(QuietPrinter):
 

@@ -41,6 +41,7 @@ class Client:
         self.serv.send_file(file, size, self.printer.progressBar)
         file.close()
 
+        self.printer.print_upload_finished(name)
         self.printer.print_bytes_sent(size)
         self.printer.print_time_elapsed(time.time() - start)
 
@@ -65,6 +66,7 @@ class Client:
         self.serv.recv_file(file, size, self.printer.progressBar)
         file.close()
 
+        self.printer.print_download_finished(name)
         self.printer.print_bytes_recv(size)
         self.printer.print_time_elapsed(time.time() - start)
 
