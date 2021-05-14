@@ -1,3 +1,5 @@
+NOTA: estos tests quedan como log de lo que se testeo, algunas de las files necesarias para correrlos no se encuentran en la entrega.
+
 
 test_1
 upload con dir incorrecta
