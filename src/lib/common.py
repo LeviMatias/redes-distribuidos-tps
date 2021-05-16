@@ -1,11 +1,11 @@
 import socket
-import os
 import time
 
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
 CHUNK_SIZE = 1024
 OK_ACK = "Ok"
+ABORT = 'Abort'
 
 
 class socket_tcp:
@@ -110,24 +110,3 @@ class socket_tcp:
         self.time_alive = time.time() - self.start_t
         self.conn.shutdown(socket.SHUT_RDWR)
         self.conn.close()
-
-
-class FileManager:
-
-    def __init__(self, dir_path=None):
-        self.SERVER_BASE_PATH = dir_path
-
-    def get_name(self, path):
-        return path.split()[-1]
-
-    def open_file(self, path, how):
-        f = open(path, how)
-        return f
-
-    def get_size(self, file):
-
-        file.seek(0, os.SEEK_END)
-        size = file.tell()
-        file.seek(0, os.SEEK_SET)
-
-        return size

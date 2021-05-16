@@ -2,9 +2,8 @@ import socket
 import time
 import queue
 from threading import Thread
-from lib.common import UPLOAD, DOWNLOAD, socket_tcp, FileManager, package
+from lib.common import UPLOAD, DOWNLOAD
 
-ABORT_PACKAGE = -1
 
 class connection_instance:
     def __init__(self, socket, addr):
