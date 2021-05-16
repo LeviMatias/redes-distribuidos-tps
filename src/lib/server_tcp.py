@@ -40,7 +40,7 @@ class connection_instance:
         if request == UPLOAD:
             self._server_upload_protocol()
         elif request == DOWNLOAD:
-            self._server_download_protocol()
+            self._server_download_protocol(request)
         else:
             raise(ConnectionAbortedError)
 
