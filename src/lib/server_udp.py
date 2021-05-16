@@ -1,103 +1,160 @@
-import socket
-import time
 import queue
 from threading import Thread
-from lib.common import UPLOAD, DOWNLOAD
+
+from lib.common import FileManager, CHUNK_SIZE
+from lib.package import Package
+from lib.socket_udp import socket_udp
 
 
-class connection_instance:
-    def __init__(self, socket, addr):
-        self.q = queue.Queue()
-        self.addr = addr
-        self.socket = socket
-        self.current_seqnum = 0
-        self.expected_seqnum = 1
-        self.last_update = time.time()
+class Server_udp:
+    def __init__(self, address, port, dir_addr):
+        self.address = address
+        self.port = port
+        self.active_connections = {}
+        self.socket = None
+        self.fmanager = FileManager(dir_addr)
 
-    def pull(self):
-        elem = self.q.get()
-        if elem == ABORT_PACKAGE:
-            raise ConnectionAbortedError
-        return elem
+    def start(self):
+        self.create_socket()
+        self.listen()
 
-    def push(self, data):
-        self.q.push(data)
+    def create_socket(self):
+        self.socket = socket_udp(self.address, self.port)
 
-    def send_ack_ok(self):
-        pass
+    # socket.sendto(OK_ACK, package.src_address)
+    def listen(self):
+        while(True):
+            package = self.get_new_package()
+            self.demux(package)
 
-    def _get_next_package(self):
-        seqnum = -1
-        package = None
-        while (seqnum != self.expected_seqnum):
-            send_ack_ok(self.current_seqnum)
-            package = self.pull()
-            seqnum, = package.sequnum
-            self.last_update = time.time()
+    def get_new_package(self):
 
-        self.expected_seqnum += 1
-        self.current_seqnum += 1
-        send_ack_ok(self.current_seqnum)
+        message, address = self.socket.recv(CHUNK_SIZE)
+        package = Package.deserealize(message, address)
         return package
 
-    def _upload_protocol(self, path, size):
-        file = open(path,'bw')
-        
-        bytesrcv = 0
-        while bytesrcv < size:
-            package = self._get_next_package() 
-            bytesrcv += package.payload_size
-          
+    def demux(self, package):
+        address = package.get_src_address()
 
-    # choose handler for the request
-    def dispatch_request(self, package):
+        if address not in self.active_connections:
+            self.create_connection_with(address)
 
-        if package.request == UPLOAD:
-            self._upload_protocol(package.path, package.size)
-        elif package.request == DOWNLOAD:
-            self._download_protocol(package.path, package.size)
+        self.active_connections[address].push(package)
+
+    def create_connection_with(self, address):
+        conn = Connection_instance(self.socket, address, self.fmanager, self)
+        conn.start()
+        self.active_connections[address] = conn
+
+    def notify_ended_connection_at(self, address):
+        del self.active_connections[address]
+
+
+class Connection_instance:
+    def __init__(self, socket, address, fmanager, server):
+        self.server = server
+        self.socket = socket
+        self.address = address
+        self.package_queue = queue.Queue()
+        self.fmanager = fmanager
+        self.__init_sequnums()
+        self.running = False
+
+    def push(self, package):
+        self.package_queue.put(package)
+
+    def pull(self):
+        return self.package_queue.get()
+
+    def __init_sequnums(self):
+        self.current_seqnum = -1
+        self.expected_seqnum = self.current_seqnum + 1
+
+    def __update_seqnums(self):
+        self.current_seqnum += 1
+        self.expected_seqnum = self.current_seqnum + 1
+
+    def __get_next_seqnum(self, seqnum):
+        return seqnum + 1
+
+    def start(self):
+        self.running = True
+        thread = Thread(target=self.dispatch)
+        thread.start()
+        thread.join()
+
+    # el timer de conexion de implementaria en este loop
+    # se envia un abort package al client en el timer interrupt
+    def dispatch(self):
+        while self.running:
+            package = self.pull()
+            package.dispatch_to(self)
+
+    # esta garantizado que el package es de tipo upload
+    # notar que no importa si es el primer packete o si es uno del medio
+    # siempre la operacion es la misma y es consistente
+    def do_upload(self, package):
+        seqnum = package.get_seqnum()
+        if seqnum == self.expected_seqnum:
+            self.__reconstruct_file(package)
+            self.__update_seqnums()
+        self.__send_ack()
+
+    # esta garantizado que el package es de tipo download
+    # el paquete download recibido por la conection_instance (lado server)
+    # siempre sera un ACK con seqnum del ultimo paquete recibido en orden
+    # por el client
+    # notar que no importa si es el primer packete o si es uno del medio
+    # siempre la operacion es la misma y es consistente
+    def do_download(self, package):
+        ack_seqnum = package.get_seqnum()
+        path = package.get_path()
+
+        if ack_seqnum == self.current_seqnum:
+            send_package = self.__extract_next_package(ack_seqnum, path)
+            self.__update_seqnums()
+            self.__send(send_package)
         else:
-            raise(ConnectionAbortedError)
+            self.__retransmit()
 
-    def listen_request(self):
-        validreq = False;
-        while not validreq:
-            request = self.wait_on_q()
-            
-            validreq =  self.dispatch_request(request);
-            if not validreq:
-                 send_ack_ok(-1)
+    # esta garantizado que el package es de tipo abort
+    # si el ack de no le llega al cliente problema del cliente
+    # (hubiese usado TCP y no un protocolo connectionless)
+    def do_abort(self, package):
+        self.__update_seqnums()
+        self.__send_ack()
+        self.__close()
 
-    def run(self):
-        self.thread = Thread(target=self.listen_request)
-        self.thread.start()
+    # se asume que el packete no esta identificado porque tiene
+    # algun problema de formateo sea por corrupcion o fallo de
+    # protocolo
+    # se envia ack para pedir reenvio
+    def do_recv_unidentified(self, package):
+        self.__send_ack()
 
-#serve
+    def __retransmit(self):
+        self.__send(self.last_sent_package)
 
-def serve(host, port, dir_path, printer):
-    addr = (host, port)
-    active_connections = []
+    def __close(self):
+        self.running = False
+        self.server.notify_ended_connection_at(self.address)
 
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind(addr)
+    def __send(self, package):
+        self.last_sent_package = package
+        bytestream = Package.serialize(package)
+        self.socket.send(bytestream, self.address)
 
-        while True:
-            data, addr = sock.recv()
-            # cull list from dead connections
-            active_connections[:] = [c for c in active_connections
-                                     if not c.finished()]
+    def __extract_next_package(self, seqnum, path):
+        next_seqnum = self.__get_next_seqnum(seqnum)
+        payload = self.fmanager.read_chunck(CHUNK_SIZE, path, how='br')
+        return Package.create_download(next_seqnum, payload)
 
-            if data:
-                if not addr in active_connections:
-                    ci = connection_instance(addr)
-                    ci.run()
-                    active_connections[addr] = ci
-                ci.push(data)
+    def __reconstruct_file(self, package):
+        name = package.get_name()
+        path = self.fmanager.absolute_path(name)
+        self.fmanager.write(path, 'rb')
 
-    except KeyboardInterrupt:
-
-        if sock:
-            sock.close()
-            for cli in active_connections:
-                cli.close()
+    def __send_ack(self):
+        ack = Package.create_ack(self.current_seqnum)
+        bytestream = Package.serialize(ack)
+        self.socket.send(bytestream, self.address)
