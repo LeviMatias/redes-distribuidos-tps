@@ -1,8 +1,13 @@
 import os
 
+CHUNK_SIZE = 1024
+PAYLOAD_SIZE = 1024
+
+CONNECTION_TIMEOUT = 10
+
+NULL = 'NullPackage'
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
-CHUNK_SIZE = 1024
 OK_ACK = "Ok"
 ABORT = 'Abort'
 
@@ -31,8 +36,8 @@ class FileManager:
 
     # https://docs.python.org/2.4/lib/bltin-file-objects.html
     # ver metodo 'read([size])'
-    def read_chunck(self, chunck_size, path, how='br'):
-        return self.get_file(path, how).read(chunck_size).encode()
+    def read_chunk(self, chunk_size, path, how='br'):
+        return self.get_file(path, how).read(chunk_size).encode()
 
     def close(self, path):
         file = self.get_file(path, create=False)
@@ -45,7 +50,8 @@ class FileManager:
 
     def get_size(self, path):
         file = self.get_file(path)
+        index = file.tell()
         file.seek(0, os.SEEK_END)
         size = file.tell()
-        file.seek(0, os.SEEK_SET)
+        file.seek(index, os.SEEK_SET)
         return size

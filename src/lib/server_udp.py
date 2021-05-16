@@ -1,53 +1,11 @@
 import queue
+import time
 from threading import Thread
 
 from lib.common import FileManager, CHUNK_SIZE
-from lib.package import Package
+from lib.package import Package, Header
 from lib.socket_udp import socket_udp
-
-
-class Server_udp:
-    def __init__(self, address, port, dir_addr):
-        self.address = address
-        self.port = port
-        self.active_connections = {}
-        self.socket = None
-        self.fmanager = FileManager(dir_addr)
-
-    def start(self):
-        self.create_socket()
-        self.listen()
-
-    def create_socket(self):
-        self.socket = socket_udp(self.address, self.port)
-
-    # socket.sendto(OK_ACK, package.src_address)
-    def listen(self):
-        while(True):
-            package = self.get_new_package()
-            self.demux(package)
-
-    def get_new_package(self):
-
-        message, address = self.socket.recv(CHUNK_SIZE)
-        package = Package.deserealize(message, address)
-        return package
-
-    def demux(self, package):
-        address = package.get_src_address()
-
-        if address not in self.active_connections:
-            self.create_connection_with(address)
-
-        self.active_connections[address].push(package)
-
-    def create_connection_with(self, address):
-        conn = Connection_instance(self.socket, address, self.fmanager, self)
-        conn.start()
-        self.active_connections[address] = conn
-
-    def notify_ended_connection_at(self, address):
-        del self.active_connections[address]
+from lib.common import DOWNLOAD, UPLOAD, ABORT, CONNECTION_TIMEOUT
 
 
 class Connection_instance:
@@ -59,9 +17,11 @@ class Connection_instance:
         self.fmanager = fmanager
         self.__init_sequnums()
         self.running = False
+        self.last_active = time()
 
     def push(self, package):
         self.package_queue.put(package)
+        self.last_active = time()
 
     def pull(self):
         return self.package_queue.get()
@@ -87,8 +47,18 @@ class Connection_instance:
     # se envia un abort package al client en el timer interrupt
     def dispatch(self):
         while self.running:
+
             package = self.pull()
-            package.dispatch_to(self)
+            ptype = package.header.req
+
+            if ptype == DOWNLOAD:
+                ptype.do_download(package)
+            elif ptype == UPLOAD:
+                self.do_upload(package)
+            elif ptype == ABORT:
+                self.do_abort(package)
+            else:
+                self.do_recv_unidentified(package)
 
     # esta garantizado que el package es de tipo upload
     # notar que no importa si es el primer packete o si es uno del medio
@@ -132,6 +102,9 @@ class Connection_instance:
     def do_recv_unidentified(self, package):
         self.__send_ack()
 
+    def is_active():
+        return time.time() - self.last_active < CONNECTION_TIMEOUT
+
     def __retransmit(self):
         self.__send(self.last_sent_package)
 
@@ -146,8 +119,13 @@ class Connection_instance:
 
     def __extract_next_package(self, seqnum, path):
         next_seqnum = self.__get_next_seqnum(seqnum)
-        payload = self.fmanager.read_chunck(CHUNK_SIZE, path, how='br')
-        return Package.create_download(next_seqnum, payload)
+
+        filesz = self.fmanager.get_size(path)
+        header = Header(next_seqnum, DOWNLOAD, path, filesz)
+
+        size = CHUNK_SIZE - header.size
+        payload = self.fmanager.read_chunk(size, path, how='br')
+        return Package(header, payload)
 
     def __reconstruct_file(self, package):
         name = package.get_name()
@@ -158,3 +136,60 @@ class Connection_instance:
         ack = Package.create_ack(self.current_seqnum)
         bytestream = Package.serialize(ack)
         self.socket.send(bytestream, self.address)
+
+
+class Server_udp:
+    def __init__(self, address, port, dir_addr):
+        self.address = address
+        self.port = port
+        self.active_connections = {}
+        self.socket = None
+        self.fmanager = FileManager(dir_addr)
+
+    def run(self):
+        self.create_socket()
+        self._setup_cleaner()
+        self.listen()
+
+    def create_socket(self):
+        self.socket = socket_udp(self.address, self.port)
+
+    # socket.sendto(OK_ACK, package.src_address)
+    def listen(self):
+        while(True):
+            package = self.__get_new_package()
+            self.demux(package)
+
+    def __get_new_package(self):
+
+        message, address = self.socket.recv(CHUNK_SIZE)
+        package = Package.deserealize(message, address)
+        return package
+
+    def demux(self, package):
+        address = package.get_src_address()
+
+        if address not in self.active_connections:
+            self.create_connection_with(address)
+
+        self.active_connections[address].push(package)
+
+    def create_connection_with(self, address):
+        conn = Connection_instance(self.socket, address, self.fmanager, self)
+        conn.start()
+        self.active_connections[address] = conn
+
+    def notify_ended_connection_at(self, address):
+        del self.active_connections[address]
+
+    def _setup_cleaner(self):
+        Thread(target=self._periodic_clean)
+
+    def _periodic_clean(self):
+        while True:
+            time.sleep(CONNECTION_TIMEOUT)
+            abortpckg = Package(Header(-1, ABORT, "", 0), "")
+
+            self.active_connections = {addr: c for c, addr
+                                       in self.active_connections.items()
+                                       if c.is_active() or c.push(abortpckg)}
