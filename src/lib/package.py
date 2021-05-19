@@ -19,17 +19,16 @@ class Package:
     def serialize(package):
         return (package.header.serialized + str(package.payload)).encode()
 
-    # if no bytestream it returns a 'null_package TODO' 
     @staticmethod
     def deserialize(bytestream):
         bytestream = str(bytestream)
         fields = bytestream.split(SEPARATOR)
         header = Header(fields[0], fields[1], fields[2], fields[3])
 
-        return Package(header, (fields[4]).decode())
+        return Package(header, fields[4].encode())
 
     @staticmethod
-    def create_ack(num): #todo recv ok_ack as param?
+    def create_ack(num):  # todo recv ok_ack as param?
         h = Header(num, "ACK", "", 0)
         return Package(h, ("").encode())
 

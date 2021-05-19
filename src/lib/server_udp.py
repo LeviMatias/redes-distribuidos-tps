@@ -5,7 +5,8 @@ from threading import Thread
 from lib.common import FileManager, CHUNK_SIZE
 from lib.package import Package, Header
 from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, UPLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.common import DOWNLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.common import AbortedException, TimeOutException
 
 
 class Connection_instance:
@@ -37,14 +38,15 @@ class Connection_instance:
     # el timer de conexion de implementaria en este loop
     # se envia un abort package al client en el timer interrupt
     def dispatch(self):
-            package = self.pull()
-            ptype = package.header.req
+        package = self.pull()
+        ptype = package.header.req
 
-            try:
-                if ptype == DOWNLOAD:
-                    ptype.do_download(package)
-            except AbortedException:
-                # close file or something idk
+        try:
+            if ptype == DOWNLOAD:
+                ptype.do_download(package)
+        except AbortedException:
+            pass
+            # close file or something idk
 
     # esta garantizado que el package es de tipo upload
     # notar que no importa si es el primer packete o si es uno del medio
@@ -73,7 +75,7 @@ class Connection_instance:
                 package = None
         return package
 
-    def is_active():
+    def is_active(self):
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
         self.timeouts = self.timeouts + 1 if timed_out else 0
         return self.timeouts <= MAX_TIMEOUTS
@@ -81,14 +83,9 @@ class Connection_instance:
     def __close(self):
         self.running = False
 
-    def __send(self, package):
-        self.last_sent_package = package
-        bytestream = Package.serialize(package)
-        self.socket.send(bytestream, self.address)
-
     def __reconstruct_file(self, package):
         path = self.fmanager.absolute_path(package.header.name)
-        written = self.fmanager.write(path, 'rb')
+        written = self.fmanager.write(path+'(2)', 'rb')
         return written >= package.header.filesz
 
     def __send_ack(self):
@@ -116,18 +113,16 @@ class Server_udp:
     # socket.sendto(OK_ACK, package.src_address)
     def listen(self):
         while(True):
-            package = self.__get_new_package()
-            self.demux(package)
+            package, address = self.__get_new_package()
+            self.demux(package, address)
 
     def __get_new_package(self):
 
         message, address = self.socket.recv(CHUNK_SIZE)
         package = Package.deserialize(message)
-        return package
+        return package, address
 
-    def demux(self, package):
-        address = package.get_src_address()
-
+    def demux(self, package, address):
         if address not in self.active_connections:
             self.create_connection_with(address)
 

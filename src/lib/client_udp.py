@@ -1,25 +1,24 @@
 import queue
 import time
-from threading import Thread
+from socket import AF_INET, SOCK_DGRAM, socket
 
-from lib.common import FileManager, CHUNK_SIZE
+from lib.common import CHUNK_SIZE
 from lib.package import Package, Header
-from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, UPLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS, TimeOutException, AbortedException
+from lib.common import TimeOutException, AbortedException
+from lib.common import DOWNLOAD, CONNECTION_TIMEOUT, MAX_TIMEOUTS
 
 
 class Client_udp:
-    def __init__(self, address, fmanager):
-        self.socket = socket_udp(self.address, self.port)
-        self.address = address
+    def __init__(self, address, port, fmanager, _printer):
+        self.socket = socket(AF_INET, SOCK_DGRAM)
+        self.address = (address, port)
         self.package_queue = queue.Queue()
         self.fmanager = fmanager
-        self.__init_sequnums()
         self.running = False
-        self.last_active = time()
+        self.last_active = time.time()
         self.timeouts = 0
 
-    def do_upload(self):
+    def do_upload(self, path):
         filesz = self.fmanager.get_size(path)
         seqnum = 0
         sent = 0
@@ -44,19 +43,19 @@ class Client_udp:
     def __send(self, package):
         self.last_sent_package = package
         bytestream = Package.serialize(package)
-        self.socket.send(bytestream, self.address)
+        self.socket.sendto(bytestream, self.address)
 
     def __recv_ack(self):
-        return listen_for_next()
+        return self.listen_for_next()
 
     def _active(self):
-        timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
+        timed_out = (time.time() - self.last_active) > CONNECTION_TIMEOUT
 
-        if timed_out and self.timeouts < MAX_TIMEOUTS  # permissible timeout ocurred
+        if timed_out and self.timeouts < MAX_TIMEOUTS:  # permissible timeout
             self.timeouts = self.timeouts + 1
-            self.last_active = time.time() # reset
+            self.last_active = time.time()  # reset
             raise TimeOutException()
-        elif timed_out: # reached timeout limit, connection assumed lost
+        elif timed_out:  # reached timeout limit, connection assumed lost
             raise AbortedException()
 
         return True
@@ -69,8 +68,8 @@ class Client_udp:
     def listen_for_next(self):
         package = None
         while not package and self._active():
-            package = self.socket.recv(CHUNK_SIZE)
+            package, _addr = self.socket.recvfrom(CHUNK_SIZE)
 
         self.last_active = time()
-        self.timeouts = 0 # probably a better idea to implement the blocking queue
+        self.timeouts = 0  # probably a better idea to implement the blocking q
         return Package.deserialize(package)

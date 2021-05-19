@@ -1,12 +1,10 @@
-import socket
-import sys
-from lib.client_tcp import Client
-from lib.common import socket_tcp
-from lib.argument_parser import ArgParser
+from lib.client_udp import Client_udp
+from lib.common import FileManager
+# from lib.argument_parser import ArgParser
 
 
 if __name__ == "__main__":
-
+    '''
     ArgParser.check_client_side_args(sys.argv)
 
     help, host, port, path, name, _pr = ArgParser.parse_client_side(sys.argv)
@@ -17,4 +15,8 @@ if __name__ == "__main__":
 
         client = Client(socket_tcp(serv, (host, port)), _pr)
         client.upload(path, name)
-        client.close()
+        client.close()'''
+
+    client = Client_udp('localhost', 9000, FileManager(), None)
+    client.do_upload('.\\test1.txt')
+    client.close()

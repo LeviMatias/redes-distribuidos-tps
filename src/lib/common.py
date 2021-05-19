@@ -12,8 +12,10 @@ DOWNLOAD = "Download"
 OK_ACK = "Ok"
 ABORT = 'Abort'
 
+
 class TimeOutException(Exception):
     pass
+
 
 class AbortedException(Exception):
     pass
@@ -33,9 +35,9 @@ class FileManager:
         self.opened_files[path] = f
         return f
 
-    def get_file(self, path, how, create=True):
+    def get_file(self, path, create=True):
         if path not in self.opened_files and create:
-            self.open_file(path, how)
+            self.open_file(path, 'br')
         return self.opened_files[path]
 
     def write(self, path, data, how='bw'):

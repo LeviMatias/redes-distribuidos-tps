@@ -9,8 +9,8 @@ class socket_udp:
         self.socket = socket(AF_INET, SOCK_DGRAM)
         self.socket.bind((self.address, self.port))
 
-    def send(self, data):
-        self.socket.send(data)
+    def send(self, data, address):
+        self.socket.sendto(data, address)
 
     def recv(self, size):
         return self.socket.recvfrom(size)

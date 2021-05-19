@@ -1,6 +1,5 @@
-import sys
-from lib.server_tcp import serve
-from lib.argument_parser import ArgParser
+from lib.server_udp import Server_udp
+# from lib.argument_parser import ArgParser
 
 '''
     ArgParser.check_server_side_args(sys.argv)
@@ -18,5 +17,5 @@ if __name__ == "__main__":
     port = 9000
     dir_addr = './'
 
-    server = Server(self, address, port, dir_addr)
+    server = Server_udp(address, port, dir_addr)
     server.run()
