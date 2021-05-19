@@ -15,25 +15,22 @@ class Connection_instance:
         self.address = address
         self.package_queue = queue.Queue()
         self.fmanager = fmanager
-        self.__init_sequnums()
         self.running = False
-        self.last_active = time()
+        self.last_active = time.time()
         self.timeouts = 0
 
     def push(self, package):
         self.package_queue.put(package)
-        self.last_active = time()
+        self.last_active = time.time()
 
     def pull(self):
         package = self.package_queue.get()
-        package.validate()
         return package
 
     def start(self):
         self.running = True
-        thread = Thread(target=self.dispatch)
-        thread.start()
-        thread.join()
+        self.thread = Thread(target=self.dispatch)
+        self.thread.start()
 
     # el timer de conexion de implementaria en este loop
     # se envia un abort package al client en el timer interrupt
@@ -43,7 +40,7 @@ class Connection_instance:
 
         try:
             if ptype == DOWNLOAD:
-                ptype.do_download(package)
+                self.do_upload(package)
         except AbortedException:
             pass
             # close file or something idk
@@ -55,11 +52,11 @@ class Connection_instance:
         self.current_seqnum = -1
         while True:  # either finished or gets aborted
 
-            if package.seqnum == self.current_seqnum + 1:
+            if package.header.seqnum == self.current_seqnum + 1:
                 finished = self.__reconstruct_file(package)
                 if finished:
                     self.__close()
-                    self.fmanager.close(package.header.name)
+                    self.fmanager.close(package.header.name + "(2)")
                     return
                 self.current_seqnum += 1
 
@@ -84,14 +81,17 @@ class Connection_instance:
         self.running = False
 
     def __reconstruct_file(self, package):
-        path = self.fmanager.absolute_path(package.header.name)
-        written = self.fmanager.write(path+'(2)', 'rb')
+        path = package.header.name
+        written = self.fmanager.write(path+'(2)', package.payload, 'wb')
         return written >= package.header.filesz
 
     def __send_ack(self):
         ack = Package.create_ack(self.current_seqnum)
         bytestream = Package.serialize(ack)
         self.socket.send(bytestream, self.address)
+
+    def join(self):
+        self.thread.join()
 
 
 class Server_udp:
@@ -129,7 +129,7 @@ class Server_udp:
         self.active_connections[address].push(package)
 
     def create_connection_with(self, address):
-        conn = Connection_instance(self.socket, address, self.fmanager, self)
+        conn = Connection_instance(self.socket, address, self.fmanager)
         conn.start()
         self.active_connections[address] = conn
 
@@ -143,4 +143,5 @@ class Server_udp:
 
             self.active_connections = {addr: c for c, addr
                                        in self.active_connections.items()
-                                       if c.is_active() or c.push(abortpckg)}
+                                       if c.is_active() or c.push(abortpckg)
+                                       or c.join()}

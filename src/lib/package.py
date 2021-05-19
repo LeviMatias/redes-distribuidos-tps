@@ -17,13 +17,12 @@ class Package:
 
     @staticmethod
     def serialize(package):
-        return (package.header.serialized + str(package.payload)).encode()
+        return (package.header.serialized.encode() + package.payload)
 
     @staticmethod
     def deserialize(bytestream):
-        bytestream = str(bytestream)
-        fields = bytestream.split(SEPARATOR)
-        header = Header(fields[0], fields[1], fields[2], fields[3])
+        fields = bytestream.decode().split(SEPARATOR)
+        header = Header(int(fields[0]), fields[1], fields[2], int(fields[3]))
 
         return Package(header, fields[4].encode())
 

@@ -27,16 +27,18 @@ class Client_udp:
             header = Header(seqnum, DOWNLOAD, path, filesz)
 
             size = CHUNK_SIZE - header.size
-            payload = self.fmanager.read_chunk(size, path, how='br')
+            payload = self.fmanager.read_chunk(size, path, how='rb')
 
             acked = False
             while not acked:
                 try:
                     self.__send(Package(header, payload))
-                    acked = self.__recv_ack().header.seqnum = seqnum
+                    acked = self.__recv_ack().header.seqnum == seqnum
                     seqnum = seqnum + 1 if acked else seqnum
                 except TimeOutException:
                     acked = False
+
+            sent += len(payload)
 
         self.fmanager.close(path)
 
@@ -70,6 +72,6 @@ class Client_udp:
         while not package and self._active():
             package, _addr = self.socket.recvfrom(CHUNK_SIZE)
 
-        self.last_active = time()
+        self.last_active = time.time()
         self.timeouts = 0  # probably a better idea to implement the blocking q
         return Package.deserialize(package)

@@ -3,7 +3,7 @@ import os
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
-CONNECTION_TIMEOUT = 5
+CONNECTION_TIMEOUT = 0.3
 MAX_TIMEOUTS = 3
 
 NULL = 'NullPackage'
@@ -35,23 +35,23 @@ class FileManager:
         self.opened_files[path] = f
         return f
 
-    def get_file(self, path, create=True):
+    def get_file(self, path, how, create=True):
         if path not in self.opened_files and create:
-            self.open_file(path, 'br')
+            self.open_file(path, how)
         return self.opened_files[path]
 
-    def write(self, path, data, how='bw'):
+    def write(self, path, data, how='wb'):
         f = self.get_file(path, how)
         f.write(data)
         return f.tell()
 
     # https://docs.python.org/2.4/lib/bltin-file-objects.html
     # ver metodo 'read([size])'
-    def read_chunk(self, chunk_size, path, how='br'):
-        return self.get_file(path, how).read(chunk_size)
+    def read_chunk(self, chunk_size, path, how='rb'):
+        return self.get_file(path, 'rb').read(chunk_size)
 
     def close(self, path):
-        file = self.get_file(path, create=False)
+        file = self.get_file(path, 'rb', create=False)
         if file:
             file.close()
         self.remove(path)
@@ -60,7 +60,7 @@ class FileManager:
         del self.opened_files[path]
 
     def get_size(self, path):
-        file = self.get_file(path)
+        file = self.get_file(path, "rb")
         index = file.tell()
         file.seek(0, os.SEEK_END)
         size = file.tell()
