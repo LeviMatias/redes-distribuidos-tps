@@ -122,7 +122,7 @@ class Server_udp:
     def __get_new_package(self):
 
         message, address = self.socket.recv(CHUNK_SIZE)
-        package = Package.deserealize(message, address)
+        package = Package.deserialize(message)
         return package
 
     def demux(self, package):

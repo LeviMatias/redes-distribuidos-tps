@@ -73,4 +73,4 @@ class Client_udp:
 
         self.last_active = time()
         self.timeouts = 0 # probably a better idea to implement the blocking queue
-        return Package.deserealize(package)
+        return Package.deserialize(package)
