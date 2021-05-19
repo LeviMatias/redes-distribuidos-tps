@@ -12,6 +12,12 @@ DOWNLOAD = "Download"
 OK_ACK = "Ok"
 ABORT = 'Abort'
 
+class TimeOutException(Exception):
+    pass
+
+class AbortedException(Exception):
+    pass
+
 
 class FileManager:
 

@@ -22,7 +22,6 @@ class Connection_instance:
     def push(self, package):
         self.package_queue.put(package)
         self.last_active = time()
-        self.timeouts = 0
 
     def pull(self):
         return self.package_queue.get()
@@ -82,7 +81,7 @@ class Connection_instance:
 
     def is_active():
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
-        self.timeouts = self.timeouts + 1 if timed_out
+        self.timeouts = self.timeouts + 1 if timed_out else 0
         return self.timeouts <= MAX_TIMEOUTS
 
     def __close(self):

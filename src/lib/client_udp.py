@@ -1,100 +1,76 @@
+import queue
+import time
+from threading import Thread
+
 from lib.common import FileManager, CHUNK_SIZE
 from lib.package import Package, Header
 from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, UPLOAD, ABORT, NULL, CONNECTION_TIMEOUT
-import time
+from lib.common import DOWNLOAD, UPLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS, TimeOutException, AbortedException
 
 
 class Client_udp:
-
-    def __init__(self, address, port):
-        self.address = address
-        self.port = port
-        self.socket = None
-        self.fmanager = FileManager()
-        self.on = False
-        self.last_active = time()
-
-    def __init_sequnums(self):
-        self.current_seqnum = -1
-        self.expected_seqnum = self.current_seqnum + 1
-
-    def __update_seqnums(self):
-        self.current_seqnum += 1
-        self.expected_seqnum = self.current_seqnum + 1
-
-    def __get_next_seqnum(self, seqnum):
-        return seqnum + 1
-
-    def create_socket(self):
+    def __init__(self, address, fmanager):
         self.socket = socket_udp(self.address, self.port)
+        self.address = address
+        self.package_queue = queue.Queue()
+        self.fmanager = fmanager
+        self.__init_sequnums()
+        self.running = False
+        self.last_active = time()
+        self.timeouts = 0
 
-    def listen(self):
-        while not self.__timeout():
-            package = self.__recv_package()
-            self.__dispatch(package)
-
-    def __timeout(self):
-        return time.time() - self.timer < CONNECTION_TIMEOUT
-
-    def __dispatch(self, package):
-        ptype = package.get_type()
-        if ptype == DOWNLOAD: 
-            self.do_download(package)
-        elif ptype == UPLOAD: # confuso porque no se lee que es un ACK TODO
-            self.do_upload(package)
-        elif ptype == ABORT:
-            self.do_abort(package)
-        elif ptype == NULL:  # medio confuso TODO
-            pass
-        else:
-            self.do_recv_unidentified(package)
-
-    def __recv_package(self):
-        message, address = self.socket.recv(CHUNK_SIZE)
-
-        if message:
-            self.last_active = time()
-        package = Package.deserealize(message, address)
-        return package
-
-    def upload(self, path):
-
-        self.on = True
-        send_package = self.__extract_next_package(-1, path)  # raro el -1 TODO
-        self.__update_seqnums()
-        self.__send(send_package)
-
-        while self.on:
-            self.listen()
-            self.do_upload()
-
-    def __extract_next_package(self, seqnum, path):
-        next_seqnum = self.__get_next_seqnum(seqnum)  # raro TODO
-
+    def do_upload(self):
         filesz = self.fmanager.get_size(path)
-        header = Header(next_seqnum, DOWNLOAD, path, filesz)
+        seqnum = 0
+        sent = 0
 
-        size = CHUNK_SIZE - header.size
-        payload = self.fmanager.read_chunk(size, path, how='br')
-        return Package(header, payload)
+        while sent < filesz:
+            header = Header(seqnum, DOWNLOAD, path, filesz)
 
-    def do_upload(self, package):
-        ack_seqnum = package.get_seqnum()
-        path = package.get_path()
+            size = CHUNK_SIZE - header.size
+            payload = self.fmanager.read_chunk(size, path, how='br')
 
-        if ack_seqnum == self.current_seqnum:
-            send_package = self.__extract_next_package(ack_seqnum, path)
-            self.__update_seqnums()
-            self.__send(send_package)
-        else:
-            self.__retransmit()
+            acked = False
+            while not acked:
+                try:
+                    self.__send(Package(header, payload))
+                    acked = self.__recv_ack().header.seqnum = seqnum
+                    seqnum = seqnum + 1 if acked else seqnum
+                except TimeOutException:
+                    acked = False
 
-    def do_download(self, package):
-        pass
+        self.fmanager.close(path)
 
-    def do_abort(self, package):
-        pass
+    def __send(self, package):
+        self.last_sent_package = package
+        bytestream = Package.serialize(package)
+        self.socket.send(bytestream, self.address)
 
-    def do_recv_unidentified(self, package):
-        pass
+    def __recv_ack(self):
+        return listen_for_next()
+
+    def _active(self):
+        timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
+
+        if timed_out and self.timeouts < MAX_TIMEOUTS  # permissible timeout ocurred
+            self.timeouts = self.timeouts + 1
+            self.last_active = time.time() # reset
+            raise TimeOutException()
+        elif timed_out: # reached timeout limit, connection assumed lost
+            raise AbortedException()
+
+        return True
+
+    def __send_ack(self):
+        ack = Package.create_ack(self.current_seqnum)
+        bytestream = Package.serialize(ack)
+        self.socket.send(bytestream, self.address)
+
+    def listen_for_next(self):
+        package = None
+        while not package and self._active():
+            package = self.socket.recv(CHUNK_SIZE)
+
+        self.last_active = time()
+        self.timeouts = 0 # probably a better idea to implement the blocking queue
+        return Package.deserealize(package)
