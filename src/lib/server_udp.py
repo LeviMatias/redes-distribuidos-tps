@@ -24,15 +24,9 @@ class Connection_instance:
         self.last_active = time()
 
     def pull(self):
-        return self.package_queue.get()
-
-    def __init_sequnums(self):
-        self.current_seqnum = -1
-        self.expected_seqnum = self.current_seqnum + 1
-
-    def __update_seqnums(self):
-        self.current_seqnum += 1
-        self.expected_seqnum = self.current_seqnum + 1
+        package = self.package_queue.get()
+        package.validate()
+        return package
 
     def start(self):
         self.running = True
@@ -43,41 +37,41 @@ class Connection_instance:
     # el timer de conexion de implementaria en este loop
     # se envia un abort package al client en el timer interrupt
     def dispatch(self):
-        while self.running:
             package = self.pull()
             ptype = package.header.req
 
-            if ptype == DOWNLOAD:
-                ptype.do_download(package)
-            elif ptype == ABORT:
-                self.do_abort(package)
-            else:
-                self.do_recv_unidentified(package)
+            try:
+                if ptype == DOWNLOAD:
+                    ptype.do_download(package)
+            except AbortedException:
+                # close file or something idk
 
     # esta garantizado que el package es de tipo upload
     # notar que no importa si es el primer packete o si es uno del medio
     # siempre la operacion es la misma y es consistente
     def do_upload(self, package):
-            if package.seqnum == self.expected_seqnum:
+        self.current_seqnum = -1
+        while True:  # either finished or gets aborted
+
+            if package.seqnum == self.current_seqnum + 1:
                 finished = self.__reconstruct_file(package)
                 if finished:
                     self.__close()
-                self.__update_seqnums()
-            self.__send_ack()
+                    self.fmanager.close(package.header.name)
+                    return
+                self.current_seqnum += 1
 
-    # esta garantizado que el package es de tipo abort
-    # si el ack de no le llega al cliente problema del cliente
-    def do_abort(self, package):
-        self.__update_seqnums()
-        self.__send_ack()
-        self.__close()
+            package = self._get_next_package()
 
-    # se asume que el packete no esta identificado porque tiene
-    # algun problema de formateo sea por corrupcion o fallo de
-    # protocolo
-    # se envia ack para pedir reenvio
-    def do_recv_unidentified(self, package):
-        self.__send_ack()
+    def _get_next_package(self):
+        package = None
+        while not package:
+            try:
+                self.__send_ack()
+                package = self.pull()
+            except TimeOutException:
+                package = None
+        return package
 
     def is_active():
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
@@ -93,8 +87,7 @@ class Connection_instance:
         self.socket.send(bytestream, self.address)
 
     def __reconstruct_file(self, package):
-        name = package.get_name()
-        path = self.fmanager.absolute_path(name)
+        path = self.fmanager.absolute_path(package.header.name)
         written = self.fmanager.write(path, 'rb')
         return written >= package.header.filesz
 
