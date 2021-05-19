@@ -30,7 +30,12 @@ class Package:
         fields = bytestream.split(SEPARATOR)
         header = Header(fields[0], fields[1], fields[2], fields[3])
 
-        return Package(header, (fields[4]).encode())
+        return Package(header, (fields[4]).decode())
+
+     @staticmethod #todo, maybe move dispatch cycle to inside each handler function
+    def create_ack(num): #todo recv ok_ack as param?
+        h = Header(num, "ACK", "", 0)
+        return Package(h, ("").encode())
 
     @staticmethod
     def create_null_package():

@@ -5,12 +5,11 @@ from threading import Thread
 from lib.common import FileManager, CHUNK_SIZE
 from lib.package import Package, Header
 from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, UPLOAD, ABORT, CONNECTION_TIMEOUT
+from lib.common import DOWNLOAD, UPLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS
 
 
 class Connection_instance:
-    def __init__(self, socket, address, fmanager, server):
-        self.server = server
+    def __init__(self, socket, address, fmanager):
         self.socket = socket
         self.address = address
         self.package_queue = queue.Queue()
@@ -18,10 +17,12 @@ class Connection_instance:
         self.__init_sequnums()
         self.running = False
         self.last_active = time()
+        self.timeouts = 0
 
     def push(self, package):
         self.package_queue.put(package)
         self.last_active = time()
+        self.timeouts = 0
 
     def pull(self):
         return self.package_queue.get()
@@ -34,9 +35,6 @@ class Connection_instance:
         self.current_seqnum += 1
         self.expected_seqnum = self.current_seqnum + 1
 
-    def __get_next_seqnum(self, seqnum):
-        return seqnum + 1
-
     def start(self):
         self.running = True
         thread = Thread(target=self.dispatch)
@@ -47,14 +45,11 @@ class Connection_instance:
     # se envia un abort package al client en el timer interrupt
     def dispatch(self):
         while self.running:
-
             package = self.pull()
             ptype = package.header.req
 
             if ptype == DOWNLOAD:
                 ptype.do_download(package)
-            elif ptype == UPLOAD:
-                self.do_upload(package)
             elif ptype == ABORT:
                 self.do_abort(package)
             else:
@@ -64,32 +59,15 @@ class Connection_instance:
     # notar que no importa si es el primer packete o si es uno del medio
     # siempre la operacion es la misma y es consistente
     def do_upload(self, package):
-        seqnum = package.get_seqnum()
-        if seqnum == self.expected_seqnum:
-            self.__reconstruct_file(package)
-            self.__update_seqnums()
-        self.__send_ack()
-
-    # esta garantizado que el package es de tipo download
-    # el paquete download recibido por la conection_instance (lado server)
-    # siempre sera un ACK con seqnum del ultimo paquete recibido en orden
-    # por el client
-    # notar que no importa si es el primer packete o si es uno del medio
-    # siempre la operacion es la misma y es consistente
-    def do_download(self, package):
-        ack_seqnum = package.get_seqnum()
-        path = package.get_path()
-
-        if ack_seqnum == self.current_seqnum:
-            send_package = self.__extract_next_package(ack_seqnum, path)
-            self.__update_seqnums()
-            self.__send(send_package)
-        else:
-            self.__retransmit()
+            if package.seqnum == self.expected_seqnum:
+                finished = self.__reconstruct_file(package)
+                if finished:
+                    self.__close()
+                self.__update_seqnums()
+            self.__send_ack()
 
     # esta garantizado que el package es de tipo abort
     # si el ack de no le llega al cliente problema del cliente
-    # (hubiese usado TCP y no un protocolo connectionless)
     def do_abort(self, package):
         self.__update_seqnums()
         self.__send_ack()
@@ -103,29 +81,17 @@ class Connection_instance:
         self.__send_ack()
 
     def is_active():
-        return time.time() - self.last_active < CONNECTION_TIMEOUT
-
-    def __retransmit(self):
-        self.__send(self.last_sent_package)
+        timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
+        self.timeouts = self.timeouts + 1 if timed_out
+        return self.timeouts <= MAX_TIMEOUTS
 
     def __close(self):
         self.running = False
-        self.server.notify_ended_connection_at(self.address)
 
     def __send(self, package):
         self.last_sent_package = package
         bytestream = Package.serialize(package)
         self.socket.send(bytestream, self.address)
-
-    def __extract_next_package(self, seqnum, path):
-        next_seqnum = self.__get_next_seqnum(seqnum)
-
-        filesz = self.fmanager.get_size(path)
-        header = Header(next_seqnum, DOWNLOAD, path, filesz)
-
-        size = CHUNK_SIZE - header.size
-        payload = self.fmanager.read_chunk(size, path, how='br')
-        return Package(header, payload)
 
     def __reconstruct_file(self, package):
         name = package.get_name()
@@ -178,9 +144,6 @@ class Server_udp:
         conn = Connection_instance(self.socket, address, self.fmanager, self)
         conn.start()
         self.active_connections[address] = conn
-
-    def notify_ended_connection_at(self, address):
-        del self.active_connections[address]
 
     def _setup_cleaner(self):
         Thread(target=self._periodic_clean)
