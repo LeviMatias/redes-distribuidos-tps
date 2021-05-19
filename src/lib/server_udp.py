@@ -96,7 +96,8 @@ class Connection_instance:
     def __reconstruct_file(self, package):
         name = package.get_name()
         path = self.fmanager.absolute_path(name)
-        self.fmanager.write(path, 'rb')
+        written = self.fmanager.write(path, 'rb')
+        return written >= package.header.filesz
 
     def __send_ack(self):
         ack = Package.create_ack(self.current_seqnum)

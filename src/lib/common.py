@@ -33,12 +33,14 @@ class FileManager:
         return self.opened_files[path]
 
     def write(self, path, data, how='bw'):
-        self.get_file(path, how).write(data)
+        f = self.get_file(path, how)
+        f.write(data)
+        return f.tell()
 
     # https://docs.python.org/2.4/lib/bltin-file-objects.html
     # ver metodo 'read([size])'
     def read_chunk(self, chunk_size, path, how='br'):
-        return self.get_file(path, how).read(chunk_size).encode()
+        return self.get_file(path, how).read(chunk_size)
 
     def close(self, path):
         file = self.get_file(path, create=False)
