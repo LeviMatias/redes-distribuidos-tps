@@ -1,6 +1,6 @@
 import sys
-from lib.client_tcp import Client
-from lib.common import socket_tcp
+from lib.client_udp import Client_udp
+from lib.common import FileManager
 from lib.argument_parser import ArgParser
 from lib.printer import VerbosePrinter
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     if not help:
         client = Client_udp(host, port, FileManager(), printer)
-        client.do_download(path, name)
+        client.download(path, name)
         client.close()
         
 

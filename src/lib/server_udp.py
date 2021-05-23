@@ -55,7 +55,7 @@ class Connection_instance:
 
         name = package.header.name
         server_file_path = self.fmanager.SERVER_BASE_PATH + name
-        
+
         while self.running:  # either finished or gets aborted
 
             if package.header.seqnum == self.current_seqnum + 1:
@@ -67,6 +67,32 @@ class Connection_instance:
                 self.current_seqnum += 1
 
             package = self._get_next_package()
+
+    def do_download(self, package):
+        path = package.header.path
+        name = package.header.name
+        filesz = self.fmanager.get_size(path)
+        seqnum = 0
+        sent = 0
+
+        while sent < filesz:
+            header = Header(seqnum, DOWNLOAD, path, name, filesz)
+
+            size = CHUNK_SIZE - header.size
+            payload = self.fmanager.read_chunk(size, path, how='rb')
+
+            acked = False
+            while not acked:
+                try:
+                    self.__send(Package(header, payload))
+                    acked = self.__recv_ack().header.seqnum == seqnum
+                    seqnum = seqnum + 1 if acked else seqnum
+                except TimeOutException:
+                    acked = False
+
+            sent += len(payload)
+
+        self.fmanager.close(path)
 
     def _get_next_package(self):
         package = None

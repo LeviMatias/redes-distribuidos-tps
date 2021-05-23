@@ -1,3 +1,5 @@
+from lib.common import DOWNLOAD, OK_ACK
+
 SEPARATOR = "|"
 SEPARATOR_ASCII = 124
 HEADER_END = "~"
@@ -26,6 +28,10 @@ class Package:
 
     @staticmethod
     def deserialize(bytestream):
+
+        if not bytestream:
+            return None
+
         fields = []
 
         start = 0
@@ -48,8 +54,13 @@ class Package:
         return Package(header, fields[-1])
 
     @staticmethod
-    def create_ack(num):  # todo recv ok_ack as param?
-        h = Header(num, "ACK", "", "", 0)
+    def create_ack(num):
+        h = Header(num, OK_ACK, "", "", 0)
+        return Package(h, ("").encode())
+
+    @staticmethod
+    def create_download_request():
+        h = Header(0, DOWNLOAD, "", "", 0)
         return Package(h, ("").encode())
 
     def __init__(self, header, payload):
