@@ -2,7 +2,7 @@ import queue
 import time
 from threading import Thread
 
-from lib.common import FileManager, CHUNK_SIZE
+from lib.common import FileManager, CHUNK_SIZE, UPLOAD
 from lib.package import Package, Header
 from lib.socket_udp import socket_udp
 from lib.common import DOWNLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS
@@ -39,8 +39,10 @@ class Connection_instance:
         ptype = package.header.req
 
         try:
-            if ptype == DOWNLOAD:
+            if ptype == UPLOAD:
                 self.do_upload(package)
+            elif ptype == DOWNLOAD:
+                self.do_download(package)
         except AbortedException:
             pass
             # close file or something idk
@@ -50,13 +52,17 @@ class Connection_instance:
     # siempre la operacion es la misma y es consistente
     def do_upload(self, package):
         self.current_seqnum = -1
-        while True:  # either finished or gets aborted
+
+        name = package.header.name
+        server_file_path = self.fmanager.SERVER_BASE_PATH + name
+        
+        while self.running:  # either finished or gets aborted
 
             if package.header.seqnum == self.current_seqnum + 1:
-                finished = self.__reconstruct_file(package)
+                finished = self.__reconstruct_file(package, server_file_path)
                 if finished:
                     self.__close()
-                    self.fmanager.close(package.header.name + "(2)")
+                    self.fmanager.close(server_file_path)
                     return
                 self.current_seqnum += 1
 
@@ -80,9 +86,8 @@ class Connection_instance:
     def __close(self):
         self.running = False
 
-    def __reconstruct_file(self, package):
-        path = package.header.name
-        written = self.fmanager.write(path+'(2)', package.payload, 'wb')
+    def __reconstruct_file(self, package, server_file_path):
+        written = self.fmanager.write(server_file_path, package.payload, 'wb')
         return written >= package.header.filesz
 
     def __send_ack(self):

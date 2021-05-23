@@ -1,21 +1,16 @@
+import sys
 from lib.server_udp import Server_udp
-# from lib.argument_parser import ArgParser
+from lib.argument_parser import ArgParser
 
-'''
+
+if __name__ == "__main__":
+
     ArgParser.check_server_side_args(sys.argv)
 
     help, host, port, dir_path, printer = ArgParser.parse_server_side(sys.argv)
 
     if not help:
-        serve(host, port, dir_path, printer)
-'''
+        server = Server_udp(host, port, dir_path)
+        server.run()
 
 
-if __name__ == "__main__":
-
-    address = 'localhost'
-    port = 9000
-    dir_addr = './'
-
-    server = Server_udp(address, port, dir_addr)
-    server.run()

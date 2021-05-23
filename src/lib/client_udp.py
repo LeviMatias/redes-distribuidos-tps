@@ -2,10 +2,10 @@ import queue
 import time
 from socket import AF_INET, SOCK_DGRAM, socket
 
-from lib.common import CHUNK_SIZE
+from lib.common import CHUNK_SIZE, UPLOAD
 from lib.package import Package, Header
 from lib.common import TimeOutException, AbortedException
-from lib.common import DOWNLOAD, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.common import CONNECTION_TIMEOUT, MAX_TIMEOUTS
 
 
 class Client_udp:
@@ -18,13 +18,13 @@ class Client_udp:
         self.last_active = time.time()
         self.timeouts = 0
 
-    def do_upload(self, path):
+    def do_upload(self, path, name):
         filesz = self.fmanager.get_size(path)
         seqnum = 0
         sent = 0
 
         while sent < filesz:
-            header = Header(seqnum, DOWNLOAD, path, filesz)
+            header = Header(seqnum, UPLOAD, path, name, filesz)
 
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
@@ -46,7 +46,7 @@ class Client_udp:
         self.last_sent_package = package
         bytestream = Package.serialize(package)
         self.socket.sendto(bytestream, self.address)
-
+        
     def __recv_ack(self):
         return self.listen_for_next()
 
