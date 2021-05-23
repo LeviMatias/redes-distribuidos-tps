@@ -6,19 +6,10 @@ PAYLOAD_SIZE = 1024
 CONNECTION_TIMEOUT = 0.3
 MAX_TIMEOUTS = 3
 
-NULL = 'NullPackage'
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
-OK_ACK = "Ok"
+ACK = "ACK"
 ABORT = 'Abort'
-
-
-class TimeOutException(Exception):
-    pass
-
-
-class AbortedException(Exception):
-    pass
 
 
 class FileManager:
@@ -50,7 +41,7 @@ class FileManager:
     def read_chunk(self, chunk_size, path, how='rb'):
         return self.get_file(path, 'rb').read(chunk_size)
 
-    def close(self, path):
+    def close_file(self, path):
         file = self.get_file(path, 'rb', create=False)
         if file:
             file.close()

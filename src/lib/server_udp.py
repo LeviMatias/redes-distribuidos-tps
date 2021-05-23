@@ -3,10 +3,10 @@ import time
 from threading import Thread
 
 from lib.common import FileManager, CHUNK_SIZE, UPLOAD
-from lib.package import Package, Header
+from lib.package import Package, AbortPackage, Header
 from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, ABORT, CONNECTION_TIMEOUT, MAX_TIMEOUTS
-from lib.common import AbortedException, TimeOutException
+from lib.common import DOWNLOAD, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.exceptions import AbortedException, TimeOutException
 
 
 class Connection_instance:
@@ -18,6 +18,8 @@ class Connection_instance:
         self.running = False
         self.last_active = time.time()
         self.timeouts = 0
+        self.current_seqnum = 0
+        self.bytes_sent = 0
 
     def push(self, package):
         self.package_queue.put(package)
@@ -25,6 +27,7 @@ class Connection_instance:
 
     def pull(self):
         package = self.package_queue.get()
+        package.validate()
         return package
 
     def start(self):
@@ -32,50 +35,46 @@ class Connection_instance:
         self.thread = Thread(target=self.dispatch)
         self.thread.start()
 
-    # el timer de conexion de implementaria en este loop
-    # se envia un abort package al client en el timer interrupt
     def dispatch(self):
-        package = self.pull()
-        ptype = package.header.req
-
         try:
+            first = self.pull()
+            ptype = first.header.req
+
             if ptype == UPLOAD:
-                self.do_upload(package)
+                self.do_upload(first)
             elif ptype == DOWNLOAD:
-                self.do_download(package)
+                self.do_download(first)
+
         except AbortedException:
-            pass
-            # close file or something idk
+            self.__close()
 
-    # esta garantizado que el package es de tipo upload
-    # notar que no importa si es el primer packete o si es uno del medio
-    # siempre la operacion es la misma y es consistente
-    def do_upload(self, package):
-        self.current_seqnum = -1
+    def do_upload(self, firts_pckg):
 
-        name = package.header.name
+        name = firts_pckg.header.name
         server_file_path = self.fmanager.SERVER_BASE_PATH + name
+        finished = False
 
-        while self.running:  # either finished or gets aborted
+        package = firts_pckg
+        while self.running:
 
             if package.header.seqnum == self.current_seqnum + 1:
                 finished = self.__reconstruct_file(package, server_file_path)
-                if finished:
-                    self.__close()
-                    self.fmanager.close(server_file_path)
-                    return
                 self.current_seqnum += 1
 
-            package = self._get_next_package()
+            self.__send_ack()
+            if finished:
+                self.fmanager.close_file(server_file_path)
+                self.__close()
+            else:
+                package = self.pull()
 
     def do_download(self, package):
         path = package.header.path
         name = package.header.name
         filesz = self.fmanager.get_size(path)
         seqnum = 0
-        sent = 0
 
-        while sent < filesz:
+        while self.running:
             header = Header(seqnum, DOWNLOAD, path, name, filesz)
 
             size = CHUNK_SIZE - header.size
@@ -84,15 +83,17 @@ class Connection_instance:
             acked = False
             while not acked:
                 try:
-                    self.__send(Package(header, payload))
-                    acked = self.__recv_ack().header.seqnum == seqnum
+                    package = Package(header, payload)
+                    self.__send(package)
+                    acked = self.socket.__recv_ack_to(package).header.seqnum == seqnum
                     seqnum = seqnum + 1 if acked else seqnum
                 except TimeOutException:
                     acked = False
 
-            sent += len(payload)
+            self.bytes_sent += len(payload)
 
-        self.fmanager.close(path)
+            if self.bytes_sent >= filesz:
+                self.fmanager.close_file(path)
 
     def _get_next_package(self):
         package = None
@@ -139,19 +140,12 @@ class Server_udp:
         self.listen()
 
     def create_socket(self):
-        self.socket = socket_udp(self.address, self.port)
+        self.socket = socket_udp(self.address, self.port, always_open=True)
 
-    # socket.sendto(OK_ACK, package.src_address)
     def listen(self):
         while(True):
             package, address = self.__get_new_package()
             self.demux(package, address)
-
-    def __get_new_package(self):
-
-        message, address = self.socket.recv(CHUNK_SIZE)
-        package = Package.deserialize(message)
-        return package, address
 
     def demux(self, package, address):
         if address not in self.active_connections:
@@ -170,7 +164,7 @@ class Server_udp:
     def _periodic_clean(self):
         while True:
             time.sleep(CONNECTION_TIMEOUT)
-            abortpckg = Package(Header(-1, ABORT, "", 0), "")
+            abortpckg = AbortPackage()
 
             self.active_connections = {addr: c for c, addr
                                        in self.active_connections.items()

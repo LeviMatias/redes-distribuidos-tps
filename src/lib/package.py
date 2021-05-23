@@ -1,4 +1,5 @@
-from lib.common import DOWNLOAD, OK_ACK
+from lib.common import DOWNLOAD, ACK
+from lib.exceptions import AbortedException
 
 SEPARATOR = "|"
 SEPARATOR_ASCII = 124
@@ -16,7 +17,7 @@ class Header:
         self.filesz = filesz
         self.serialized = (f'{seqnum}'+SEPARATOR+f'{req}' + SEPARATOR +
                            f'{path}' + SEPARATOR +
-                           f'{name}'+SEPARATOR+f'{filesz}'+HEADER_END)
+                           f'{name}'+SEPARATOR+f'{filesz}' + HEADER_END)
         self.size = len(self.serialized)
 
 
@@ -54,8 +55,13 @@ class Package:
         return Package(header, fields[-1])
 
     @staticmethod
+    def create_hello_package(protocol_type):
+        h = Header(0, protocol_type, "", "", 0)
+        return Package(h, ("").encode())
+
+    @staticmethod
     def create_ack(num):
-        h = Header(num, OK_ACK, "", "", 0)
+        h = Header(num, ACK, "", "", 0)
         return Package(h, ("").encode())
 
     @staticmethod
@@ -69,3 +75,12 @@ class Package:
 
     def get_type(self):
         return self.header.req
+
+    def validate(self):
+        pass
+
+
+class AbortPackage(Package):
+
+    def validate(self):
+        raise AbortedException()
