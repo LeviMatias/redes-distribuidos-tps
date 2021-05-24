@@ -1,9 +1,14 @@
 from socket import AF_INET, SOCK_DGRAM, socket
-from lib.package import Package
-from lib.common import CHUNK_SIZE, ACK, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.package import Package, ACK
 from lib.exceptions import TimeOutException, AbortedException
 import time
 from threading import Lock
+
+CHUNK_SIZE = 1024
+PAYLOAD_SIZE = 1024
+
+CONNECTION_TIMEOUT = 0.3
+MAX_TIMEOUTS = 3
 
 
 class socket_udp:
@@ -22,9 +27,9 @@ class socket_udp:
 
     def reliable_send(self, package, address):
         self.send(package, address)
-        self.__recv_ack_to(package)  # waits until ack or triple timeouts
+        self.__recv_ack_to(package, address)
 
-    def listen_for_next(self, last_recvd_seqnum):
+    def listen_for_next_from(self, last_recvd_seqnum):
 
         package_recvd = False
         while not package_recvd and self.__active():
@@ -49,7 +54,7 @@ class socket_udp:
 
         return package, address
 
-    def __recv_ack_to(self, package):
+    def __recv_ack_to(self, package, address):
         try:
             ack_recvd = False
             while not ack_recvd and self.__active():
@@ -67,11 +72,15 @@ class socket_udp:
             self.__reset_timeouts()
 
         except TimeOutException:
-            self.reliable_send(package)  # retransmit
+            self.reliable_send(package, address)  # retransmit
 
     def send(self, package, address):
         bytestream = Package.serialize(package)
         self.socket.sendto(bytestream, address)
+
+    def send_ack(self, seqnum, address):
+        ack = Package.create_ack(seqnum)
+        self.send(ack, address)
 
     def __is_correct_ack(self, recvd_package, last_sent_package):
         is_ack = recvd_package.header.req == ACK
@@ -79,10 +88,6 @@ class socket_udp:
         sent_seq = last_sent_package.header.seqnum
         is_expected_seqnum = recv_seq == sent_seq
         return is_ack and is_expected_seqnum
-
-    def send_ack(self, seqnum, address):
-        ack = Package.create_ack(seqnum)
-        self.send(ack, address)
 
     def __reset_timer(self):
         self.last_active = time.time()

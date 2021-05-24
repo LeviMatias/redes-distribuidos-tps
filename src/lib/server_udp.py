@@ -2,10 +2,11 @@ import queue
 import time
 from threading import Thread
 
-from lib.common import FileManager, CHUNK_SIZE, UPLOAD
+from lib.file_manager import FileManager
 from lib.package import Package, AbortPackage, Header
+from lib.socket_udp import CONNECTION_TIMEOUT, MAX_TIMEOUTS, CHUNK_SIZE
 from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, CONNECTION_TIMEOUT, MAX_TIMEOUTS, HELLO
+from lib.package import DOWNLOAD, UPLOAD
 from lib.exceptions import AbortedException
 
 
@@ -16,8 +17,8 @@ class Connection_instance:
         self.package_queue = queue.Queue()
         self.fmanager = fmanager
         self.running = False
-        self.current_seqnum = 0
         self.timeouts = 0
+        self.in_use_file_path = None
 
     def push(self, package):
         self.package_queue.put(package)
@@ -38,42 +39,44 @@ class Connection_instance:
             first = self.pull()
             ptype = first.header.req
 
-            if ptype == HELLO:
-                self.socket.send_ack(0, self.address)
-                self.dispatch()
-            elif ptype == UPLOAD:
+            if ptype == UPLOAD:
                 self.do_upload(first)
             elif ptype == DOWNLOAD:
                 self.do_download(first)
 
         except AbortedException:
+            if self.in_use_file_path:
+                self.fmanager.close_file(self.in_use_file_path)
             self.__close()
 
     def do_upload(self, firts_pckg):
 
         name = firts_pckg.header.name
-        server_file_path = self.fmanager.SERVER_BASE_PATH + name
-        finished = False
+        path = self.fmanager.SERVER_BASE_PATH + name
+        self.in_use_file_path = path
 
+        last_recv_seqnum = -1
         package = firts_pckg
         transmition_complt = False
         while self.running and not transmition_complt:
 
-            if package.header.seqnum == self.current_seqnum + 1:
-                finished = self.__reconstruct_file(package, server_file_path)
-                self.current_seqnum += 1
-                self.socket.send_ack(self.current_seqnum, self.address)
+            if package.header.seqnum == last_recv_seqnum + 1:
+                finished = self.__reconstruct_file(package, path)
+                last_recv_seqnum += 1
+                self.socket.send_ack(last_recv_seqnum, self.address)
 
             if finished:
-                self.fmanager.close_file(server_file_path)
+                self.fmanager.close_file(path)
                 self.__close()
                 transmition_complt = True
             else:
                 package = self.pull()
 
     def do_download(self, firts_pckg):
-        path = firts_pckg.header.path
+
         name = firts_pckg.header.name
+        path = self.fmanager.SERVER_BASE_PATH + name
+        self.in_use_file_path = path
         filesz = self.fmanager.get_size(path)
         seqnum = 0
         bytes_sent = 0
@@ -84,7 +87,9 @@ class Connection_instance:
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
             self.socket.reliable_send(package, self.address)
+
             bytes_sent += len(payload)
+            seqnum += 1
 
         self.fmanager.close_file(path)
 

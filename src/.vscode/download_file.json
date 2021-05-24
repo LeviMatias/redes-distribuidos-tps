@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "name": "download_file",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/download-file",
+            "args": [
+                "-H", "localhost",
+                "-p", "9000",
+                "-d", "${workspaceFolder}/src/lib/files-client/namesv1.txt",
+                "-n", "namecl1.txt",
+                "-v"
+            ]
+        }
+    ]
+}

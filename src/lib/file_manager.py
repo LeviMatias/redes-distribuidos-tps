@@ -1,17 +1,5 @@
 import os
 
-CHUNK_SIZE = 1024
-PAYLOAD_SIZE = 1024
-
-CONNECTION_TIMEOUT = 0.3
-MAX_TIMEOUTS = 3
-
-UPLOAD = "Upload"
-DOWNLOAD = "Download"
-ACK = "ACK"
-ABORT = 'Abort'
-HELLO = 'hello'
-
 
 class FileManager:
 

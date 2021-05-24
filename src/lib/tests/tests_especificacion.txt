@@ -6,12 +6,12 @@ CADA VEZ QUE SE DETECTA UN PAQUETE PERDIDO EL VERBOSE DEBERIA LOGEAR ESE HECHO
 test_1
 upload con dir incorrecta
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/wrong_name -n namesv1.txt -v
+	python upload-file -H localhost -p 9000 -s ./lib/files-client/wrong_name -n namesv1.txt -v
 
 test_2
 download con dir incorrecta
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python download-file -H localhost -p 9000 -d ./lib/files-server/wrong_name -n namecl1.txt -v
+	python download-file -H localhost -p 9000 -d ./lib/files-client/namecl1.txt -n wrong_name -v
 
 test_3
 upload con dir correcta large file txt
@@ -21,27 +21,27 @@ upload con dir correcta large file txt
 test_4
 download con dir correcta large file txt
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python download-file -H localhost -p 9000 -d ./lib/files-server/namesv1.txt -n namecl1.txt -v
+	python download-file -H localhost -p 9000 -d ./lib/files-client/namecl1.txt -n namesv1.txt -v
 
 test_5
 upload con dir correcta binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n namesv2.mp4 -v
+	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n namesv2.mp4 -v
 
 test_6
 download con dir correcta binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python download-file -H localhost -p 9000 -d ./lib/files-server/namesv2.mp4 -n namecl2.mp4 -v
+	python download-file -H localhost -p 9000 -d ./lib/files-client/namecl2.mp4 -n namesv2.mp4 -v
 
 test_7
-download con dir correcta large file txt y con dir de server cambiada
+download con dir correcta large file txt y con dir de server y client cambiada
 	python start-server -H localhost -p 9000 -s C:/Users/axelpm/ -v
 	python upload-file -H localhost -p 9000 -d C:/Users/axelpm/test1.txt -n namesv3.txt -v
 
 test_8
 download con dir correcta large file txt y con port incorrecto
 	python start-server -H localhost -p 7000 -s ./lib/files-server/ -v
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/namesv1.txt -n namesv4.txt -v
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/namecl3.txt -n namesv2.txt -v
 
 test_9
 testear help en upload
@@ -58,33 +58,33 @@ testear help en server
 test_12
 download con dir correcta large file txt con quiet
 	python start-server -H localhost -p 6000 -s ./lib/files-server/ --quiet
-	python download-file -H localhost -p 6000 -d ./lib/files-server/namesv1.txt -n namecl3.txt --quiet
+	python download-file -H localhost -p 6000 -d ./lib/files-client/namecl3.txt -n namesv1.txt --quiet
 
 test_13
 download con dir correcta binary large con interrupcion de conexion del client
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python download-file -H localhost -p 9000 -d ./lib/files-server/namesv2.mp4 -n namecl5.mp4 -v
+	python download-file -H localhost -p 9000 -d ./lib/files-client/namecl5.mp4 -n namesv2.mp4 -v
 	<emitir interrupt desde client>
 se espera que salte un timeout del lado server
 	
 test_14
 upload con dir correcta binary large con interrupcion de conexion del client
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n namesv5.mp4 -v
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/namesv5.mp4 -n test2.mp4 -v 
 	<emitir interrupt desde client>
 se espera que salte un timeout del lado server
 	
 test_15
 download con dir correcta binary large con interrupcion de conexion del server
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python download-file -H localhost -p 9000 -d ./lib/files-server/namesv2.mp4 -n namecl5.mp4 -v
+	python download-file -H localhost -p 9000 -d ./lib/files-client/namecl5.mp4 -n namesv2.mp4 -v 
 	<emitir interrupt desde server>
 se espera que salte un timeout del lado client
 	
 test_16
 upload con dir correcta binary large con interrupcion de conexion del server
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n namesv5.mp4 -v
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/namesv5.mp4 -n test2.mp4 -v 
 	<emitir interrupt desde server>
 se espera que salte un timeout del lado client
 

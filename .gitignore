@@ -1,4 +1,3 @@
 .idea
 setting.json
-/src/lib/files-client/*
-/src/lib/files-server/*
+/src/lib/files-client/test2.mp4

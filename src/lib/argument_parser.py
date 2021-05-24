@@ -151,9 +151,9 @@ class ArgParser:
         ''')
 
     @staticmethod
-    def print_upload_help():
+    def print_download_help():
 
-        cmd_description = '''client command for uploading certain
+        cmd_description = '''client command for downloading certain
          file path or name to a host address toghether with its port number
          '''
 
@@ -170,12 +170,12 @@ class ArgParser:
         ''')
 
     @staticmethod
-    def print_download_help():
+    def print_upload_help():
 
-        cmd_description = '''client command for downloading certain
+        cmd_description = '''client command for uploading certain
          file path or name to a host address toghether with its port number
          '''
-
+         
         print(f'''
         {cmd_description}
             optional arguments :
@@ -184,6 +184,6 @@ class ArgParser:
             -q, --quiet decrease output verbosity
             -H, --host server IP address
             -p, --port server port
-            -d, --source file path
+            -s, --source file path
             -n, --name file name
         ''')

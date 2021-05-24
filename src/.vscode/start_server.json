@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "name": "start_server",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/start-server",
+            "args": [
+                "-H", "localhost",
+                "-p", "9000",
+                "-s", "${workspaceFolder}/src/lib/files-server/",
+                "-v"
+            ]
+        }
+    ]
+}

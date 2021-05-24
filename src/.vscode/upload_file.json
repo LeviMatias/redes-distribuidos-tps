@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "name": "upload_file",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/upload-file",
+            "args": [
+                "-H", "localhost",
+                "-p", "9000",
+                "-d", "${workspaceFolder}/src/lib/files-client/test1.txt",
+                "-n", "namesv1.txt ",
+                "-v"
+            ]
+        }
+    ]
+}

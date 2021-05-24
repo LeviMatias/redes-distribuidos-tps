@@ -1,10 +1,14 @@
-from lib.common import DOWNLOAD, ACK, HELLO
 from lib.exceptions import AbortedException
 
 SEPARATOR = "|"
 SEPARATOR_ASCII = 124
 HEADER_END = "~"
 END_ASCII = 126
+
+UPLOAD = "Upload"
+DOWNLOAD = "Download"
+ACK = "ACK"
+ABORT = 'Abort'
 
 
 class Header:
@@ -55,18 +59,13 @@ class Package:
         return Package(header, fields[-1])
 
     @staticmethod
-    def create_hello_package():
-        h = Header(0, HELLO, "", "", 0)
-        return Package(h, ("").encode())
-
-    @staticmethod
     def create_ack(num):
         h = Header(num, ACK, "", "", 0)
         return Package(h, ("").encode())
 
     @staticmethod
-    def create_download_request():
-        h = Header(0, DOWNLOAD, "", "", 0)
+    def create_download_request(name):
+        h = Header(0, DOWNLOAD, "", name, 0)
         return Package(h, ("").encode())
 
     def __init__(self, header, payload):

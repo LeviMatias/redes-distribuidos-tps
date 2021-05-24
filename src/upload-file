@@ -1,6 +1,6 @@
 import sys
 from lib.client_udp import Client_udp
-from lib.common import FileManager
+from lib.file_manager import FileManager
 from lib.argument_parser import ArgParser
 from lib.printer import VerbosePrinter
 

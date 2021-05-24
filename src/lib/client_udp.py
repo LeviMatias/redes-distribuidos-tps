@@ -1,7 +1,6 @@
-from lib.common import CHUNK_SIZE, UPLOAD
-from lib.package import Package, Header
+from lib.package import Package, Header, UPLOAD
 from lib.exceptions import AbortedException
-from lib.socket_udp import socket_udp
+from lib.socket_udp import socket_udp, CHUNK_SIZE
 
 
 class Client_udp:
@@ -10,8 +9,6 @@ class Client_udp:
         self.socket = socket_udp(address, port)
         self.address = (address, port)
         self.fmanager = fmanager
-        self.running = False
-        self.BASE_CLIENT_PATH = '.\\'
 
     def upload(self, path, name):
         self._data_transfer(path, name, self.do_upload)
@@ -21,14 +18,10 @@ class Client_udp:
 
     def _data_transfer(self, path, name, protocol):
         try:
-            self.handshake()
             protocol(path, name)
         except AbortedException:
+            self.fmanager.close_file(path)
             print("CONNECTION LOST")
-
-    def handshake(self):
-        request_package = Package.create_hello_package()
-        self.socket.reliable_send(request_package, self.address)
 
     def do_upload(self, path, name):
 
@@ -51,25 +44,23 @@ class Client_udp:
 
     def do_download(self, path, name):
 
-        client_path = self.BASE_CLIENT_PATH + name
-        seqnum = -1
-        transmition_complt = False
-        while self.running and not transmition_complt:
+        rquest_package = Package.create_download_request(name)
+        self.socket.send(rquest_package, self.address)
 
-            package = self.socket.listen_for_next(seqnum)
-            transmition_complt = self.__reconstruct_file(package, client_path)
+        last_recv_seqnum = -1
+        transmition_complt = False
+        while not transmition_complt:
+
+            package = self.socket.listen_for_next_from(last_recv_seqnum)
+            transmition_complt = self.__reconstruct_file(package, path)
 
             if transmition_complt:
                 self.fmanager.close(path)
-                self.__close()
 
-            seqnum += 1
+            last_recv_seqnum += 1
 
-            self.__send_ack(seqnum)
+            self.socket.send_ack(last_recv_seqnum, self.address)
 
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')
         return written >= package.header.filesz
-
-    def __close(self):
-        self.running = False
