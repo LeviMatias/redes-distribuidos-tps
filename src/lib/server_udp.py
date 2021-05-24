@@ -17,6 +17,7 @@ class Connection_instance:
         self.fmanager = fmanager
         self.running = False
         self.current_seqnum = 0
+        self.timeouts = 0
 
     def push(self, package):
         self.package_queue.put(package)
@@ -61,8 +62,8 @@ class Connection_instance:
             if package.header.seqnum == self.current_seqnum + 1:
                 finished = self.__reconstruct_file(package, server_file_path)
                 self.current_seqnum += 1
+                self.socket.send_ack(self.current_seqnum, self.address)
 
-            self.socket.send_ack(self.current_seqnum, self.address)
             if finished:
                 self.fmanager.close_file(server_file_path)
                 self.__close()
@@ -137,14 +138,14 @@ class Server_udp:
         self.active_connections[address] = conn
 
     def _setup_cleaner(self):
-        Thread(target=self._periodic_clean)
+        Thread(target=self._periodic_clean).start()
 
     def _periodic_clean(self):
         while True:
             time.sleep(CONNECTION_TIMEOUT)
             abortpckg = AbortPackage()
 
-            self.active_connections = {addr: c for c, addr
+            self.active_connections = {addr: c for addr, c
                                        in self.active_connections.items()
                                        if c.is_active() or c.push(abortpckg)
                                        or c.join()}

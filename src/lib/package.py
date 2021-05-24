@@ -82,5 +82,8 @@ class Package:
 
 class AbortPackage(Package):
 
+    def __init__(self):
+        pass
+
     def validate(self):
         raise AbortedException()
