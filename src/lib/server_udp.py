@@ -16,10 +16,7 @@ class Connection_instance:
         self.package_queue = queue.Queue()
         self.fmanager = fmanager
         self.running = False
-        self.last_active = time.time()
-        self.timeouts = 0
         self.current_seqnum = 0
-        self.bytes_sent = 0
 
     def push(self, package):
         self.package_queue.put(package)
@@ -55,45 +52,37 @@ class Connection_instance:
         finished = False
 
         package = firts_pckg
-        while self.running:
+        transmition_complt = False
+        while self.running and not transmition_complt:
 
             if package.header.seqnum == self.current_seqnum + 1:
                 finished = self.__reconstruct_file(package, server_file_path)
                 self.current_seqnum += 1
 
-            self.__send_ack()
+            self.socket.send_ack(self.current_seqnum, self.address)
             if finished:
                 self.fmanager.close_file(server_file_path)
                 self.__close()
+                transmition_complt = True
             else:
                 package = self.pull()
 
-    def do_download(self, package):
-        path = package.header.path
-        name = package.header.name
+    def do_download(self, firts_pckg):
+        path = firts_pckg.header.path
+        name = firts_pckg.header.name
         filesz = self.fmanager.get_size(path)
         seqnum = 0
+        bytes_sent = 0
 
-        while self.running:
+        while self.running and bytes_sent < filesz:
             header = Header(seqnum, DOWNLOAD, path, name, filesz)
-
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
+            package = Package(header, payload)
+            self.socket.reliable_send(package, self.address)
+            bytes_sent += len(payload)
 
-            acked = False
-            while not acked:
-                try:
-                    package = Package(header, payload)
-                    self.__send(package)
-                    acked = self.socket.__recv_ack_to(package).header.seqnum == seqnum
-                    seqnum = seqnum + 1 if acked else seqnum
-                except TimeOutException:
-                    acked = False
-
-            self.bytes_sent += len(payload)
-
-            if self.bytes_sent >= filesz:
-                self.fmanager.close_file(path)
+        self.fmanager.close_file(path)
 
     def _get_next_package(self):
         package = None
@@ -116,11 +105,6 @@ class Connection_instance:
     def __reconstruct_file(self, package, server_file_path):
         written = self.fmanager.write(server_file_path, package.payload, 'wb')
         return written >= package.header.filesz
-
-    def __send_ack(self):
-        ack = Package.create_ack(self.current_seqnum)
-        bytestream = Package.serialize(ack)
-        self.socket.send(bytestream, self.address)
 
     def join(self):
         self.thread.join()

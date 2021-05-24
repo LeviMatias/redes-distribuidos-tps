@@ -42,7 +42,7 @@ class Client_udp:
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
 
-            self.socket.reliable_send(package)
+            self.socket.reliable_send(package, self.address)
 
             sent += len(payload)
             seqnum += 1
@@ -73,8 +73,3 @@ class Client_udp:
 
     def __close(self):
         self.running = False
-
-    def __send_ack(self, current_seqnum):
-        ack = Package.create_ack(current_seqnum)
-        bytestream = Package.serialize(ack)
-        self.socket.send(bytestream, self.address)
