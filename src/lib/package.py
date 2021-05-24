@@ -1,4 +1,4 @@
-from lib.common import DOWNLOAD, ACK
+from lib.common import DOWNLOAD, ACK, HELLO
 from lib.exceptions import AbortedException
 
 SEPARATOR = "|"
@@ -55,8 +55,8 @@ class Package:
         return Package(header, fields[-1])
 
     @staticmethod
-    def create_hello_package(protocol_type):
-        h = Header(0, protocol_type, "", "", 0)
+    def create_hello_package():
+        h = Header(0, HELLO, "", "", 0)
         return Package(h, ("").encode())
 
     @staticmethod

@@ -38,6 +38,17 @@ class socket_udp:
 
         return package
 
+    def recv(self):
+        package_recvd = False
+        while not package_recvd:
+            recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+
+            if recv_bytestream:
+                package = Package.deserialize(recv_bytestream)
+                package_recvd = True
+
+        return package, address
+
     def __recv_ack_to(self, package):
         try:
             ack_recvd = False
@@ -71,8 +82,7 @@ class socket_udp:
 
     def send_ack(self, seqnum, address):
         ack = Package.create_ack(seqnum)
-        bytestream = Package.serialize(ack)
-        self.send(bytestream, address)
+        self.send(ack, address)
 
     def __reset_timer(self):
         self.last_active = time.time()

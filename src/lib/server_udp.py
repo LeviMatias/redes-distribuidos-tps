@@ -5,8 +5,8 @@ from threading import Thread
 from lib.common import FileManager, CHUNK_SIZE, UPLOAD
 from lib.package import Package, AbortPackage, Header
 from lib.socket_udp import socket_udp
-from lib.common import DOWNLOAD, CONNECTION_TIMEOUT, MAX_TIMEOUTS
-from lib.exceptions import AbortedException, TimeOutException
+from lib.common import DOWNLOAD, CONNECTION_TIMEOUT, MAX_TIMEOUTS, HELLO
+from lib.exceptions import AbortedException
 
 
 class Connection_instance:
@@ -37,7 +37,10 @@ class Connection_instance:
             first = self.pull()
             ptype = first.header.req
 
-            if ptype == UPLOAD:
+            if ptype == HELLO:
+                self.socket.send_ack(0, self.address)
+                self.dispatch()
+            elif ptype == UPLOAD:
                 self.do_upload(first)
             elif ptype == DOWNLOAD:
                 self.do_download(first)
@@ -84,16 +87,6 @@ class Connection_instance:
 
         self.fmanager.close_file(path)
 
-    def _get_next_package(self):
-        package = None
-        while not package:
-            try:
-                self.__send_ack()
-                package = self.pull()
-            except TimeOutException:
-                package = None
-        return package
-
     def is_active(self):
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
         self.timeouts = self.timeouts + 1 if timed_out else 0
@@ -125,10 +118,11 @@ class Server_udp:
 
     def create_socket(self):
         self.socket = socket_udp(self.address, self.port, always_open=True)
+        self.socket.bind()
 
     def listen(self):
         while(True):
-            package, address = self.__get_new_package()
+            package, address = self.socket.recv()
             self.demux(package, address)
 
     def demux(self, package, address):

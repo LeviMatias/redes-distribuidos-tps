@@ -1,4 +1,4 @@
-from lib.common import CHUNK_SIZE, DOWNLOAD, UPLOAD
+from lib.common import CHUNK_SIZE, UPLOAD
 from lib.package import Package, Header
 from lib.exceptions import AbortedException
 from lib.socket_udp import socket_udp
@@ -14,21 +14,21 @@ class Client_udp:
         self.BASE_CLIENT_PATH = '.\\'
 
     def upload(self, path, name):
-        self._data_transfer(path, name, self.do_upload, UPLOAD)
+        self._data_transfer(path, name, self.do_upload)
 
     def download(self, path, name):
-        self._data_transfer(path, name, self.do_download, DOWNLOAD)
+        self._data_transfer(path, name, self.do_download)
 
-    def _data_transfer(self, path, name, protocol, protocol_type):
+    def _data_transfer(self, path, name, protocol):
         try:
-            self.handshake(protocol_type)
+            self.handshake()
             protocol(path, name)
         except AbortedException:
             print("CONNECTION LOST")
 
-    def handshake(self, protocol_type):
-        request_package = Package.create_hello_package(protocol_type)
-        self.socket.reliable_send(request_package)
+    def handshake(self):
+        request_package = Package.create_hello_package()
+        self.socket.reliable_send(request_package, self.address)
 
     def do_upload(self, path, name):
 
@@ -47,7 +47,7 @@ class Client_udp:
             sent += len(payload)
             seqnum += 1
 
-        self.fmanager.close(path)
+        self.fmanager.close_file(path)
 
     def do_download(self, path, name):
 

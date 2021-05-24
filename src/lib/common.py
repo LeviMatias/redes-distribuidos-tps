@@ -10,6 +10,7 @@ UPLOAD = "Upload"
 DOWNLOAD = "Download"
 ACK = "ACK"
 ABORT = 'Abort'
+HELLO = 'hello'
 
 
 class FileManager:
