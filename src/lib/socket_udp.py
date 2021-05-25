@@ -20,19 +20,24 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.last_active = time.time()
         self.timeouts = 0
         self.always_open = False
+        self.t_bytes_sent = 0
+        self.t_bytes_send_ok = 0
+        self.t_bytes_recv = 0
 
     def reliable_send(self, package, address, package_queue=None):
-        self.send(package, address)
+        sent = self.send(package, address)
         try:
             self._recv_ack_to(package, package_queue)
+            self.t_bytes_send_ok += sent
         except TimeOutException:
             self.reliable_send(package, address, package_queue)
 
     def reliable_send_and_recv(self, package, address, package_queue=None):
         recv_package = None
-        self.send(package, address)
+        sent = self.send(package, address)
         try:
             recv_package, _ = self.recv_with_timer(package_queue)
+            self.t_bytes_send_ok += sent
             return recv_package
         except TimeOutException:
             self.reliable_send_and_recv(package, address, package_queue)
@@ -54,6 +59,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         package_recvd = False
         while not package_recvd:
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+            self.t_bytes_recv += len(recv_bytestream)
 
             if recv_bytestream:
                 package = Package.deserialize(recv_bytestream)
@@ -64,10 +70,14 @@ class socket_udp (metaclass=abc.ABCMeta):
     def send(self, package, address):
         bytestream = Package.serialize(package)
         self.socket.sendto(bytestream, address)
+        sz = len(bytestream)
+        self.t_bytes_sent += sz
+        return sz
 
     def send_ack(self, seqnum, address):
         ack = Package.create_ack(seqnum)
-        self.send(ack, address)
+        sent = self.send(ack, address)
+        self.t_bytes_send_ok += sent
 
     def _is_correct_ack(self, recvd_package, last_sent_package):
         is_ack = recvd_package.header.req == ACK
@@ -107,6 +117,7 @@ class client_socket_udp (socket_udp):
         package_recvd = False
         while not package_recvd and self._active():
             recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
+            self.t_bytes_recv += len(recv_bytestream)
 
             if recv_bytestream:
                 package = Package.deserialize(recv_bytestream)
@@ -120,6 +131,7 @@ class client_socket_udp (socket_udp):
         package_recvd = False
         while not package_recvd and self._active():
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+            self.t_bytes_recv += len(recv_bytestream)
 
             if recv_bytestream:
                 package = Package.deserialize(recv_bytestream)
@@ -132,6 +144,7 @@ class client_socket_udp (socket_udp):
         ack_recvd = False
         while not ack_recvd and self._active():
             recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
+            self.t_bytes_recv += len(recv_bytestream)
 
             if recv_bytestream:
                 recvd_package = Package.deserialize(recv_bytestream)
