@@ -64,7 +64,8 @@ class Connection_instance:
             if package.header.seqnum == last_recv_seqnum + 1:
                 finished = self.__reconstruct_file(package, path)
                 last_recv_seqnum += 1
-                self.socket.send_ack(last_recv_seqnum, self.address)
+            
+            self.socket.send_ack(last_recv_seqnum, self.address)
 
             if finished:
                 self.fmanager.close_file(path)
