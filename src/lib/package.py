@@ -8,7 +8,6 @@ END_ASCII = 126
 UPLOAD = "Upload"
 DOWNLOAD = "Download"
 ACK = "ACK"
-ABORT = 'Abort'
 
 
 class Header:
@@ -74,15 +73,3 @@ class Package:
 
     def get_type(self):
         return self.header.req
-
-    def validate(self):
-        pass
-
-
-class AbortPackage(Package):
-
-    def __init__(self):
-        pass
-
-    def validate(self):
-        raise AbortedException()

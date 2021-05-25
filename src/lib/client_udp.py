@@ -1,15 +1,18 @@
+from lib.file_manager import FileManager
 from lib.package import Package, Header, UPLOAD
 from lib.exceptions import AbortedException
 from lib.socket_udp import client_socket_udp, CHUNK_SIZE
 
 
 class Client_udp:
-    def __init__(self, address, port, fmanager, printer):
+    def __init__(self, address, port, printer):
 
         self.socket = client_socket_udp(address, port)
         self.address = (address, port)
-        self.fmanager = fmanager
+        self.fmanager = FileManager()
         self.printer = printer
+
+        self.in_use_file_path = None
 
     def upload(self, path, name):
         self._data_transfer(path, name, self.do_upload)
@@ -18,11 +21,11 @@ class Client_udp:
         self._data_transfer(path, name, self.do_download)
 
     def _data_transfer(self, path, name, protocol):
+        self.in_use_file_path = path
         try:
             protocol(path, name)
-        except AbortedException:
-            self.fmanager.close_file(path)
-            print("CONNECTION LOST")
+        except (AbortedException, KeyboardInterrupt):
+            self.close()
 
     def do_upload(self, path, name):
 
@@ -71,3 +74,8 @@ class Client_udp:
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')
         return written >= package.header.filesz
+
+    def close(self):
+        if self.in_use_file_path:
+            self.fmanager.close_file(self.in_use_file_path)
+        print("CONNECTION LOST")

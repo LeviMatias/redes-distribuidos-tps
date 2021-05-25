@@ -1,4 +1,5 @@
 from socket import AF_INET, SOCK_DGRAM, socket
+from threading import TIMEOUT_MAX
 from lib.package import Package, ACK
 from lib.exceptions import TimeOutException, AbortedException
 import time
@@ -6,9 +7,6 @@ import abc
 
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
-
-CONNECTION_TIMEOUT = 1000
-MAX_TIMEOUTS = 3
 
 
 class socket_udp (metaclass=abc.ABCMeta):
@@ -21,21 +19,34 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.timeouts = 0
         self.always_open = False
 
+    def blocking_recv(self):
+
+        package_recvd = False
+        while not package_recvd:
+            recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+
+            if recv_bytestream:
+                package = Package.deserialize(recv_bytestream)
+                package_recvd = True
+
+        return package, address
+
     def reliable_send(self, package, address, package_queue=None):
-        self.send(package, address)
-        try:
-            self._recv_ack_to(package, package_queue)
-        except TimeOutException:
-            self.reliable_send(package, address, package_queue)
+        for i in range(TIMEOUT_MAX):
+            try:
+                self.send(package, address)
+                self._recv_ack_to(package, package_queue)
+            except TimeOutException:
+                continue
 
     def reliable_send_and_recv(self, package, address, package_queue=None):
-        recv_package = None
-        self.send(package, address)
-        try:
-            recv_package, _ = self.recv_with_timer(package_queue)
-            return recv_package
-        except TimeOutException:
-            self.reliable_send_and_recv(package, address, package_queue)
+        for i in range(TIMEOUT_MAX):
+            try:
+                self.send(package, address)
+                recv_package, _ = self.recv_with_timer(package_queue)
+                return recv_package
+            except TimeOutException:
+                continue
 
     @abc.abstractmethod
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
@@ -48,18 +59,6 @@ class socket_udp (metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _recv_ack_to(self, package, package_queue=None):
         pass
-
-    def blocking_recv(self):
-
-        package_recvd = False
-        while not package_recvd:
-            recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
-
-            if recv_bytestream:
-                package = Package.deserialize(recv_bytestream)
-                package_recvd = True
-
-        return package, address
 
     def send(self, package, address):
         bytestream = Package.serialize(package)

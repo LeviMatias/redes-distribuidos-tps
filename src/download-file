@@ -12,6 +12,6 @@ if __name__ == "__main__":
     help, host, port, path, name, printer = ArgParser.parse_client_side(sys.argv)
 
     if not help:
-        client = Client_udp(host, port, FileManager(), printer)
+        client = Client_udp(host, port, printer)
         client.download(path, name)
 

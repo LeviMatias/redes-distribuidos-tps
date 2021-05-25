@@ -4,11 +4,7 @@ import os
 class FileManager:
 
     def __init__(self, dir_path=None):
-        self.SERVER_BASE_PATH = dir_path
         self.opened_files = {}
-
-    def get_name(self, path):
-        return path.split()[-1]
 
     def open_file(self, path, how):
         f = open(path, how)
@@ -35,9 +31,6 @@ class FileManager:
         if file:
             file.close()
         self.remove(path)
-
-    def remove(self, path):
-        del self.opened_files[path]
 
     def get_size(self, path):
         file = self.get_file(path, "rb")
