@@ -21,14 +21,14 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.timeouts = 0
         self.always_open = False
         self.t_bytes_sent = 0
-        self.t_bytes_send_ok = 0
+        self.t_bytes_sent_ok = 0
         self.t_bytes_recv = 0
 
     def reliable_send(self, package, address, package_queue=None):
         sent = self.send(package, address)
         try:
             self._recv_ack_to(package, package_queue)
-            self.t_bytes_send_ok += sent
+            self.t_bytes_sent_ok += sent
         except TimeOutException:
             self.reliable_send(package, address, package_queue)
 
@@ -37,7 +37,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         sent = self.send(package, address)
         try:
             recv_package, _ = self.recv_with_timer(package_queue)
-            self.t_bytes_send_ok += sent
+            self.t_bytes_sent_ok += sent
             return recv_package
         except TimeOutException:
             self.reliable_send_and_recv(package, address, package_queue)
@@ -77,7 +77,7 @@ class socket_udp (metaclass=abc.ABCMeta):
     def send_ack(self, seqnum, address):
         ack = Package.create_ack(seqnum)
         sent = self.send(ack, address)
-        self.t_bytes_send_ok += sent
+        self.t_bytes_sent_ok += sent
 
     def _is_correct_ack(self, recvd_package, last_sent_package):
         is_ack = recvd_package.header.req == ACK

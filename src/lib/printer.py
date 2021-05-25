@@ -49,6 +49,11 @@ class QuietPrinter:
     def print_upload_finished(self, filename):
         self._print("Upload of "+filename+" finished")
 
+    def print_connection_lost(self):
+        self._print(" ______ ")
+        self._print("Connection lost: no answer after timeout")
+        self._print(" ______ ")
+
 
 class DefaultPrinter(QuietPrinter):
 
@@ -67,6 +72,9 @@ class DefaultPrinter(QuietPrinter):
     def print_listening_on(self, addr):
         self._print("listening on " + addr[0] + ":" + str(addr[1]))
 
+    def print_duration(self, duration):
+        self.__print("Duration: "+str(duration)+" seconds")
+
 
 class VerbosePrinter(DefaultPrinter):
 
@@ -79,12 +87,16 @@ class VerbosePrinter(DefaultPrinter):
     def print_time_elapsed(self, time_in_seconds):
         self._print("Time elapsed: " + str(time_in_seconds) + " seconds")
 
-    def print_connection_stats(self, total_sent, total_recv, conn_dur_in_secs):
+    def print_connection_stats(self, sock_stats):
+        self._print(" ______ ")
+        sent = sock_stats.t_bytes_sent
+        sent_ok = sock_stats.t_bytes_sent_ok
+        self._print(" Total bytes sent: " + str(sent))
+        self._print(" Total ACK'd bytes sent: " + str(sent_ok))
+        self._print(" Total bytes recvd: " + str(sock_stats.t_bytes_recv))
 
-        self._print(" Total bytes sent: " + str(total_sent))
-        self._print(" Total bytes recvd: " + str(total_recv))
-        self._print(" Total connection duration: " +
-                    str(conn_dur_in_secs) + " seconds")
+        self._print(" Estimated success rate: "
+                    + str(round(sent_ok/sent), 2)+"%")
         self._print(" ______ ")
 
     def progressBar(self, current, total, barLength=20):

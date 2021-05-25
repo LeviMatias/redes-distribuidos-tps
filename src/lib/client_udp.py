@@ -1,6 +1,7 @@
 from lib.package import Package, Header, UPLOAD
 from lib.exceptions import AbortedException
 from lib.socket_udp import client_socket_udp, CHUNK_SIZE
+import time
 
 
 class Client_udp:
@@ -18,11 +19,15 @@ class Client_udp:
         self._data_transfer(path, name, self.do_download)
 
     def _data_transfer(self, path, name, protocol):
+        start = time.time()
         try:
+            self.printer.print_begin_transfer(name)
             protocol(path, name)
         except AbortedException:
             self.fmanager.close_file(path)
-            print("CONNECTION LOST")
+            self.printer.print_connection_lost()
+        self.printer.print_duration(time.time() - start)
+        self.printer.print_connection_stats(self.socket)
 
     def do_upload(self, path, name):
 
@@ -37,11 +42,13 @@ class Client_udp:
             package = Package(header, payload)
 
             self.socket.reliable_send(package, self.address)
+            self.printer.progressBar(sent, filesz)
 
             sent += len(payload)
             seqnum += 1
 
         self.fmanager.close_file(path)
+        self.printer.print_upload_finished(name)
 
     def do_download(self, path, name):
         last_recv_seqnum = -1
@@ -49,15 +56,15 @@ class Client_udp:
         req_pkg = Package.create_download_request(name)
         first_packg = self.socket.reliable_send_and_recv(req_pkg, self.address)
         last_recv_seqnum += 1
-        transmition_complt = self.__reconstruct_file(first_packg, path)
+        transmition_complt, written = self.__reconstruct_file(first_packg, path)
 
         if transmition_complt:
             self.fmanager.close_file(path)
 
         self.socket.send_ack(last_recv_seqnum, self.address)
-
+        package = first_packg
         while not transmition_complt:
-
+            self.printer.progressBar(written, package.header.filesz)
             package = self.socket.listen_for_next_from(last_recv_seqnum)
             last_recv_seqnum += 1
 
@@ -67,7 +74,8 @@ class Client_udp:
                 self.fmanager.close_file(path)
 
             self.socket.send_ack(last_recv_seqnum, self.address)
+        self.printer.print_download_finished(name)
 
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')
-        return written >= package.header.filesz
+        return written >= package.header.filesz, written
