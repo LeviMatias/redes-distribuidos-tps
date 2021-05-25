@@ -25,7 +25,8 @@ class Client_udp:
             protocol(path, name)
         except AbortedException:
             self.fmanager.close_file(path)
-            self.printer.print_connection_lost()
+            self.printer.print_connection_lost(self.address)
+        self.printer.print_connection_finished(self.address)
         self.printer.print_duration(time.time() - start)
         self.printer.print_connection_stats(self.socket)
 

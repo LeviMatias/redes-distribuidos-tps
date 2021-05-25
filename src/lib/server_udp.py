@@ -36,10 +36,12 @@ class Connection_instance:
         self.thread.start()
 
     def dispatch(self):
+        start = time.time()
         try:
             first = self.pull()
             ptype = first.header.req
 
+            self.printer.print_begin_transfer(first.header.name)
             if ptype == UPLOAD:
                 self.do_upload(first)
             elif ptype == DOWNLOAD:
@@ -48,7 +50,11 @@ class Connection_instance:
         except AbortedException:
             if self.in_use_file_path:
                 self.fmanager.close_file(self.in_use_file_path)
-            self.__close()
+            self.printer.print_connection_lost(self.address)
+
+        self.printer.print_connection_finished(self.address)
+        self.printer.print_duration(time.time() - start)
+        self.__close()
 
     def do_upload(self, firts_pckg):
 
@@ -92,7 +98,6 @@ class Connection_instance:
 
             bytes_sent += len(payload)
             seqnum += 1
-
         self.fmanager.close_file(path)
 
     def is_active(self):
@@ -133,6 +138,7 @@ class Server_udp:
         while(True):
             package, address = self.socket.blocking_recv()
             self.demux(package, address)
+        self.printer.print_connection_stats(self.socket)
 
     def demux(self, package, address):
         if address not in self.active_connections:
