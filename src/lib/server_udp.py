@@ -37,6 +37,7 @@ class Connection_instance:
 
     def dispatch(self):
         start = time.time()
+        self.printer.print_connection_established(self.address)
         try:
             first = self.pull()
             ptype = first.header.req
@@ -135,6 +136,7 @@ class Server_udp:
         self.socket.bind()
 
     def listen(self):
+        self.printer.print_listening_on((self.address, self.port))
         while(True):
             package, address = self.socket.blocking_recv()
             self.demux(package, address)

@@ -37,7 +37,7 @@ class QuietPrinter:
     def print_time_elapsed(self, time_in_seconds):
         pass
 
-    def print_connection_stats(self, total_sent, total_recv, conn_dur_in_secs):
+    def print_connection_stats(self, sock_stats):
         pass
 
     def print_begin_transfer(self, filename):
@@ -54,10 +54,14 @@ class QuietPrinter:
         self._print("Connection lost: no answer after timeout")
         self._print(" ______ ")
 
+    def print_duration(self, duration):
+        pass
+
 
 class DefaultPrinter(QuietPrinter):
 
     def print_connection_established(self, addr):
+        self._print(" ______ ")
         msg = "connection with " + addr[0] + ":" + str(addr[1]) + " started"
         self._print(msg)
 
@@ -73,7 +77,7 @@ class DefaultPrinter(QuietPrinter):
         self._print("listening on " + addr[0] + ":" + str(addr[1]))
 
     def print_duration(self, duration):
-        self.__print("Duration: "+str(duration)+" seconds")
+        self._print("Process duration: "+str(duration)+" seconds")
 
 
 class VerbosePrinter(DefaultPrinter):
@@ -92,11 +96,11 @@ class VerbosePrinter(DefaultPrinter):
         sent = sock_stats.t_bytes_sent
         sent_ok = sock_stats.t_bytes_sent_ok
         self._print(" Total bytes sent: " + str(sent))
-        self._print(" Total ACK'd bytes sent: " + str(sent_ok))
+        self._print(" Total bytes sent ACK'd: " + str(sent_ok))
         self._print(" Total bytes recvd: " + str(sock_stats.t_bytes_recv))
 
         self._print(" Estimated success rate: "
-                    + str(round(sent_ok/sent), 2)+"%")
+                    + str(round(100 * sent_ok/sent, 2))+"%")
         self._print(" ______ ")
 
     def progressBar(self, current, total, barLength=20):
