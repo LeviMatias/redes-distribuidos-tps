@@ -3,15 +3,14 @@
     "configurations": [
         {
             "cwd": "${workspaceFolder}",
-            "name": "download_file",
+            "name": "start_server",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/download-file",
+            "program": "${workspaceFolder}/start-server",
             "args": [
                 "-H", "localhost",
-                "-p", "6000",
-                "-d", "${workspaceFolder}/lib/files-client/namecl1.txt",
-                "-n", "namesv1.txt",
+                "-p", "9000",
+                "-s", "${workspaceFolder}/lib/files-server/",
                 "-v"
             ]
         }

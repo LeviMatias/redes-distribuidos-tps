@@ -44,21 +44,27 @@ class Client_udp:
         self.fmanager.close_file(path)
 
     def do_download(self, path, name):
-
-        rquest_package = Package.create_download_request(name)
-        #send
-
         last_recv_seqnum = -1
-        transmition_complt = False
+
+        req_pkg = Package.create_download_request(name)
+        first_packg = self.socket.reliable_send_and_recv(req_pkg, self.address)
+        last_recv_seqnum += 1
+        transmition_complt = self.__reconstruct_file(first_packg, path)
+
+        if transmition_complt:
+            self.fmanager.close_file(path)
+
+        self.socket.send_ack(last_recv_seqnum, self.address)
+
         while not transmition_complt:
 
             package = self.socket.listen_for_next_from(last_recv_seqnum)
-            transmition_complt = self.__reconstruct_file(package, path)
+            last_recv_seqnum += 1
 
+            transmition_complt = self.__reconstruct_file(package, path)
+            
             if transmition_complt:
                 self.fmanager.close_file(path)
-
-            last_recv_seqnum += 1
 
             self.socket.send_ack(last_recv_seqnum, self.address)
 

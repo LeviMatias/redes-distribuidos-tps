@@ -75,8 +75,6 @@ class Connection_instance:
 
     def do_download(self, request):
 
-        ack = Package.create_ack(request.header.seqnum)
-
         name = request.header.name
         path = self.fmanager.SERVER_BASE_PATH + name
         self.in_use_file_path = path
@@ -89,7 +87,8 @@ class Connection_instance:
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
-            self.socket.reliable_send(package, self.address)
+            self.socket.send(package, self.address) # TODO el realible send no anda porque hay que usar la cola de packetes
+            pkg = self.pull()
 
             bytes_sent += len(payload)
             seqnum += 1

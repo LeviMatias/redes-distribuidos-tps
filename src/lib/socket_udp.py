@@ -7,7 +7,7 @@ from threading import Lock
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
-CONNECTION_TIMEOUT = 0.3
+CONNECTION_TIMEOUT = 1000
 MAX_TIMEOUTS = 3
 
 
@@ -29,20 +29,48 @@ class socket_udp:
         self.send(package, address)
         self.__recv_ack_to(package, address)
 
+    def reliable_send_and_recv(self, package, address):
+        recv_package = None
+        self.send(package, address)
+        try:
+            recv_package, _ = self.recv_with_timer()
+            return recv_package
+        except TimeOutException:
+            self.reliable_send_and_recv(package, address)
+
     def listen_for_next_from(self, last_recvd_seqnum):
 
         package_recvd = False
         while not package_recvd and self.__active():
             self.mutex.acquire()
+            print('hola7')
             recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
             self.mutex.release()
+            print('hola')
 
             if recv_bytestream:
                 package = Package.deserialize(recv_bytestream)
                 recvd_seqnum = package.header.seqnum
                 package_recvd = recvd_seqnum == (last_recvd_seqnum + 1)
+                print('hola1')
+            print('hola2')
 
+        print('hola3')
         return package
+
+    def recv_with_timer(self):
+
+        package_recvd = False
+        while not package_recvd and self.__active():
+            self.mutex.acquire()
+            recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+            self.mutex.release()
+
+            if recv_bytestream:
+                package = Package.deserialize(recv_bytestream)
+                package_recvd = True
+
+        return package, address
 
     def recv(self):
 
