@@ -1,11 +1,11 @@
-import queue
 import time
 from threading import Thread
+import queue
 
 from lib.file_manager import FileManager
 from lib.package import Package, AbortPackage, Header
 from lib.socket_udp import CONNECTION_TIMEOUT, MAX_TIMEOUTS, CHUNK_SIZE
-from lib.socket_udp import socket_udp
+from lib.socket_udp import server_socket_udp
 from lib.package import DOWNLOAD, UPLOAD
 from lib.exceptions import AbortedException
 
@@ -14,19 +14,19 @@ class Connection_instance:
     def __init__(self, socket, address, fmanager, printer):
         self.socket = socket
         self.address = address
-        self.package_queue = queue.Queue()
         self.fmanager = fmanager
         self.printer = printer
         self.running = False
         self.timeouts = 0
         self.in_use_file_path = None
+        self.pckg_queue = queue.Queue()
 
     def push(self, package):
-        self.package_queue.put(package)
+        self.pckg_queue.put(package)
         self.last_active = time.time()
 
     def pull(self):
-        package = self.package_queue.get()
+        package = self.pckg_queue.get()
         package.validate()
         return package
 
@@ -87,8 +87,7 @@ class Connection_instance:
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
-            self.socket.send(package, self.address) # TODO el realible send no anda porque hay que usar la cola de packetes
-            pkg = self.pull()
+            self.socket.reliable_send(package, self.address, self.pckg_queue)
 
             bytes_sent += len(payload)
             seqnum += 1
@@ -126,12 +125,12 @@ class Server_udp:
         self.listen()
 
     def create_socket(self):
-        self.socket = socket_udp(self.address, self.port, always_open=True)
+        self.socket = server_socket_udp(self.address, self.port)
         self.socket.bind()
 
     def listen(self):
         while(True):
-            package, address = self.socket.recv()
+            package, address = self.socket.blocking_recv()
             self.demux(package, address)
 
     def demux(self, package, address):

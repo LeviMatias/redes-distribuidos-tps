@@ -6,11 +6,11 @@
             "name": "start_server",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/start-server",
+            "program": "${workspaceFolder}/start-server",
             "args": [
                 "-H", "localhost",
                 "-p", "9000",
-                "-s", "${workspaceFolder}/src/lib/files-server/",
+                "-s", "${workspaceFolder}/lib/files-server/",
                 "-v"
             ]
         }

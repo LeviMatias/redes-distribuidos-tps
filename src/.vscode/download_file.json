@@ -6,11 +6,11 @@
             "name": "download_file",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/download-file",
+            "program": "${workspaceFolder}/download-file",
             "args": [
                 "-H", "localhost",
                 "-p", "9000",
-                "-d", "${workspaceFolder}/src/lib/files-client/namesv1.txt",
+                "-d", "${workspaceFolder}/lib/files-client/namesv1.txt",
                 "-n", "namecl1.txt",
                 "-v"
             ]

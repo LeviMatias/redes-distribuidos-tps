@@ -1,7 +1,7 @@
 from lib.client_udp import Client_udp
 from lib.socket_udp import CHUNK_SIZE
 from lib.package import Package, Header, UPLOAD
-from lib.exceptions import AbortedException, TimeOutException
+from lib.exceptions import TimeOutException
 
 W_SIZE = 5
 

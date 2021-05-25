@@ -1,12 +1,12 @@
 from lib.package import Package, Header, UPLOAD
 from lib.exceptions import AbortedException
-from lib.socket_udp import socket_udp, CHUNK_SIZE
+from lib.socket_udp import client_socket_udp, CHUNK_SIZE
 
 
 class Client_udp:
     def __init__(self, address, port, fmanager, printer):
 
-        self.socket = socket_udp(address, port)
+        self.socket = client_socket_udp(address, port)
         self.address = (address, port)
         self.fmanager = fmanager
         self.printer = printer
