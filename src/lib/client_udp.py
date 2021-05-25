@@ -4,11 +4,12 @@ from lib.socket_udp import socket_udp, CHUNK_SIZE
 
 
 class Client_udp:
-    def __init__(self, address, port, fmanager, _printer):
+    def __init__(self, address, port, fmanager, printer):
 
         self.socket = socket_udp(address, port)
         self.address = (address, port)
         self.fmanager = fmanager
+        self.printer = printer
 
     def upload(self, path, name):
         self._data_transfer(path, name, self.do_upload)
@@ -45,7 +46,7 @@ class Client_udp:
     def do_download(self, path, name):
 
         rquest_package = Package.create_download_request(name)
-        self.socket.send(rquest_package, self.address)
+        #send
 
         last_recv_seqnum = -1
         transmition_complt = False
@@ -55,7 +56,7 @@ class Client_udp:
             transmition_complt = self.__reconstruct_file(package, path)
 
             if transmition_complt:
-                self.fmanager.close(path)
+                self.fmanager.close_file(path)
 
             last_recv_seqnum += 1
 

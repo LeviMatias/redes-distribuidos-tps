@@ -33,8 +33,9 @@ class socket_udp:
 
         package_recvd = False
         while not package_recvd and self.__active():
-
+            self.mutex.acquire()
             recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
+            self.mutex.release()
 
             if recv_bytestream:
                 package = Package.deserialize(recv_bytestream)
@@ -44,9 +45,12 @@ class socket_udp:
         return package
 
     def recv(self):
+
         package_recvd = False
         while not package_recvd:
+            self.mutex.acquire()
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+            self.mutex.release()
 
             if recv_bytestream:
                 package = Package.deserialize(recv_bytestream)

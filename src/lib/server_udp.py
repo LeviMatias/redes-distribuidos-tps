@@ -11,11 +11,12 @@ from lib.exceptions import AbortedException
 
 
 class Connection_instance:
-    def __init__(self, socket, address, fmanager):
+    def __init__(self, socket, address, fmanager, printer):
         self.socket = socket
         self.address = address
         self.package_queue = queue.Queue()
         self.fmanager = fmanager
+        self.printer = printer
         self.running = False
         self.timeouts = 0
         self.in_use_file_path = None
@@ -72,13 +73,15 @@ class Connection_instance:
             else:
                 package = self.pull()
 
-    def do_download(self, firts_pckg):
+    def do_download(self, request):
 
-        name = firts_pckg.header.name
+        ack = Package.create_ack(request.header.seqnum)
+
+        name = request.header.name
         path = self.fmanager.SERVER_BASE_PATH + name
         self.in_use_file_path = path
         filesz = self.fmanager.get_size(path)
-        seqnum = 0
+        seqnum = request.header.seqnum
         bytes_sent = 0
 
         while self.running and bytes_sent < filesz:
@@ -110,12 +113,13 @@ class Connection_instance:
 
 
 class Server_udp:
-    def __init__(self, address, port, dir_addr):
+    def __init__(self, address, port, dir_addr, printer):
         self.address = address
         self.port = port
         self.active_connections = {}
         self.socket = None
         self.fmanager = FileManager(dir_addr)
+        self.printer = printer
 
     def run(self):
         self.create_socket()
@@ -137,10 +141,10 @@ class Server_udp:
 
         self.active_connections[address].push(package)
 
-    def create_connection_with(self, address):
-        conn = Connection_instance(self.socket, address, self.fmanager)
-        conn.start()
-        self.active_connections[address] = conn
+    def create_connection_with(self, addr):
+        c = Connection_instance(self.socket, addr, self.fmanager, self.printer)
+        c.start()
+        self.active_connections[addr] = c
 
     def _setup_cleaner(self):
         Thread(target=self._periodic_clean).start()
