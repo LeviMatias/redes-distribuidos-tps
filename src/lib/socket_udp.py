@@ -59,9 +59,9 @@ class socket_udp (metaclass=abc.ABCMeta):
         package_recvd = False
         while not package_recvd:
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
-            self.t_bytes_recv += len(recv_bytestream)
 
             if recv_bytestream:
+                self.t_bytes_recv += len(recv_bytestream)
                 package = Package.deserialize(recv_bytestream)
                 package_recvd = True
 
@@ -172,6 +172,7 @@ class server_socket_udp (socket_udp):
 
             if not package_queue.empty():
                 recvd_package = package_queue.get()
+                recvd_package.validate()
                 recvd_seqnum = recvd_package.header.seqnum
                 recv = recvd_seqnum == (last_recvd_seqnum + 1)
 
@@ -184,6 +185,7 @@ class server_socket_udp (socket_udp):
 
             if not package_queue.empty():
                 recvd_package = package_queue.get()
+                recvd_package.validate()
 
         return recvd_package
 
@@ -193,6 +195,7 @@ class server_socket_udp (socket_udp):
 
             if not package_queue.empty():
                 recvd_package = package_queue.get()
+                recvd_package.validate()
 
                 if self._is_correct_ack(recvd_package, package):
                     ack_recvd = True

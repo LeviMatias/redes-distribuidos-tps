@@ -138,8 +138,11 @@ class Server_udp:
     def listen(self):
         self.printer.print_listening_on((self.address, self.port))
         while(True):
-            package, address = self.socket.blocking_recv()
-            self.demux(package, address)
+            try:
+                package, address = self.socket.blocking_recv()
+                self.demux(package, address)
+            except ConnectionResetError:
+                pass
         self.printer.print_connection_stats(self.socket)
 
     def demux(self, package, address):

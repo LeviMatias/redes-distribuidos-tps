@@ -49,9 +49,9 @@ class QuietPrinter:
     def print_upload_finished(self, filename):
         self._print("Upload of "+filename+" finished")
 
-    def print_connection_lost(self):
+    def print_connection_lost(self, addr):
         self._print(" ______ ")
-        self._print("Connection lost: no answer after timeout")
+        self._print("Connection "+addr[0]+":"+str(addr[1])+" lost: no answer")
         self._print(" ______ ")
 
     def print_duration(self, duration):
