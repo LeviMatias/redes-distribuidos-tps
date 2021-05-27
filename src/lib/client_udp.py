@@ -55,22 +55,22 @@ class Client_udp:
         last_recv_seqnum = -1
 
         req_pkg = Package.create_download_request(name)
-        first_packg = self.socket.reliable_send_and_recv(req_pkg, self.address)
+        frst_packg = self.socket.reliable_send_and_recv(req_pkg, self.address)
         last_recv_seqnum += 1
-        transmition_complt, written = self.__reconstruct_file(first_packg, path)
+        transmition_complt, written = self.__reconstruct_file(frst_packg, path)
 
         if transmition_complt:
             self.fmanager.close_file(path)
 
         self.socket.send_ack(last_recv_seqnum, self.address)
-        package = first_packg
+        package = frst_packg
         while not transmition_complt:
             self.printer.progressBar(written, package.header.filesz)
             package = self.socket.listen_for_next_from(last_recv_seqnum)
             last_recv_seqnum += 1
 
             transmition_complt = self.__reconstruct_file(package, path)
-            
+
             if transmition_complt:
                 self.fmanager.close_file(path)
 

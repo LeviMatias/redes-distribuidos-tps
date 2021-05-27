@@ -3,14 +3,15 @@
     "configurations": [
         {
             "cwd": "${workspaceFolder}",
-            "name": "start_server",
+            "name": "upload_file",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/start-server",
+            "program": "${workspaceFolder}/upload-file",
             "args": [
                 "-H", "localhost",
                 "-p", "9000",
-                "-s", "${workspaceFolder}/lib/files-server/",
+                "-d", "${workspaceFolder}/lib/files-client/test1.txt",
+                "-n", "namesv1.txt ",
                 "-v"
             ]
         }

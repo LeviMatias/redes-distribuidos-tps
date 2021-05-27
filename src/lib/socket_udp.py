@@ -80,13 +80,11 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.t_bytes_sent_ok += sent
 
     def _is_correct_ack(self, recvd_package, last_sent_package):
-        is_ack = recvd_package.header.req == ACK
-
         recv_seq = recvd_package.header.seqnum
         sent_seq = last_sent_package.header.seqnum
         is_expected_seqnum = recv_seq == sent_seq
 
-        return is_ack and is_expected_seqnum
+        return self.is_ack() and is_expected_seqnum
 
     def _reset_timer(self):
         self.last_active = time.time()
