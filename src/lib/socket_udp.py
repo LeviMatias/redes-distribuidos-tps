@@ -23,6 +23,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.t_bytes_sent = 0
         self.t_bytes_sent_ok = 0
         self.t_bytes_recv = 0
+        self.timeout_limit = CONNECTION_TIMEOUT
 
     def reliable_send(self, package, address, package_queue=None):
         sent = self.send(package, address)
@@ -95,7 +96,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.timeouts = 0  # probably a better idea to implement the blocking q
 
     def _active(self):
-        timed_out = (time.time() - self.last_active) > CONNECTION_TIMEOUT
+        timed_out = (time.time() - self.last_active) > self.timeout_limit
 
         if timed_out and self.timeouts < MAX_TIMEOUTS:  # permissible timeout
             self.timeouts = self.timeouts + 1
@@ -111,6 +112,7 @@ class client_socket_udp (socket_udp):
 
     def __init__(self, address, port):
         super().__init__(address, port)
+        self.timeout_limit = CONNECTION_TIMEOUT
 
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
 
@@ -161,6 +163,7 @@ class server_socket_udp (socket_udp):
     def __init__(self, address, port):
         super().__init__(address, port)
         self.always_open = True
+        self.timeout_limit = 2 * CONNECTION_TIMEOUT
 
     def bind(self):
         self.socket.bind((self.address, self.port))

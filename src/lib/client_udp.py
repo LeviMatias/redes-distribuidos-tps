@@ -69,8 +69,8 @@ class Client_udp:
             package = self.socket.listen_for_next_from(last_recv_seqnum)
             last_recv_seqnum += 1
 
-            transmition_complt = self.__reconstruct_file(package, path)
-            
+            transmition_complt, written = self.__reconstruct_file(package, path)
+
             if transmition_complt:
                 self.fmanager.close_file(path)
 

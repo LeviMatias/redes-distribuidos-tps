@@ -90,7 +90,7 @@ class Connection_instance:
         seqnum = request.header.seqnum
         bytes_sent = 0
 
-        while self.running and bytes_sent < filesz:
+        while bytes_sent < filesz:
             header = Header(seqnum, DOWNLOAD, path, name, filesz)
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
