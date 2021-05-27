@@ -3,8 +3,9 @@ from lib.client_udp import Client_udp
 from lib.socket_udp import CHUNK_SIZE, CONNECTION_TIMEOUT
 from lib.package import Package, Header, UPLOAD
 from lib.timer import Timer
+from lib.exceptions import TimeOutException
 
-W_SIZE = 5
+W_SIZE = 15
 
 
 class Client_udp_gbn(Client_udp):
@@ -45,12 +46,13 @@ class Client_udp_gbn(Client_udp):
 
         self.last_sent_seqnum += amount_sent
 
-    def recv_acks(self):
+    def recv_acks(self, timer):
         while not self.file_finished and self.running:
             pkg, _ = self.socket.blocking_recv()
             if pkg.is_ack():
                 ack_seqnum = pkg.header.seqnum
                 self.window_base = ack_seqnum
+                timer.reset()
 
     def send_all_queued(self):
         unkacked = self.sendq[self.window_base: self.seqnum_head]
@@ -59,22 +61,22 @@ class Client_udp_gbn(Client_udp):
 
     def do_upload(self, path, name):
 
-        acks_listener = Thread(target=self.recv_acks)
+        timer = Timer(CONNECTION_TIMEOUT)
+        acks_listener = Thread(args=[timer], target=self.recv_acks)
         acks_listener.start()
 
-        timer = Timer(CONNECTION_TIMEOUT)
         timer.start()
         try:
             while not self.file_finished and self.running:
                 try:
+                    timer.update()
                     self.fill_sending_queue(path, name)
                     self.send_queued_unsent()
-                except TimeoutError:
+                except TimeOutException:
                     timer.reset()
                     self.send_all_queued()
-                    continue
             timer.stop()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, ConnectionResetError):
             timer.stop()
 
         self.running = False

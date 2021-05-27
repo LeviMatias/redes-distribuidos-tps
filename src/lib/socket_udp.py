@@ -7,7 +7,7 @@ import abc
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
-CONNECTION_TIMEOUT = 0.5*1000
+CONNECTION_TIMEOUT = 0.5
 MAX_TIMEOUTS = 3
 
 
@@ -59,7 +59,7 @@ class socket_udp (metaclass=abc.ABCMeta):
 
         package_recvd = False
         while not package_recvd:
-            time.sleep(0.2)
+            time.sleep(0.1)
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
 
             if recv_bytestream:
@@ -70,6 +70,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         return package, address
 
     def send(self, package, address):
+        print(package.header.seqnum)
         bytestream = Package.serialize(package)
         self.socket.sendto(bytestream, address)
         sz = len(bytestream)
