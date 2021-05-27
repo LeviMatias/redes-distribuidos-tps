@@ -26,6 +26,8 @@ class Client_udp:
         except AbortedException:
             self.fmanager.close_file(path)
             self.printer.print_connection_lost(self.address)
+            self.socket.socket.close()
+
         self.printer.print_connection_finished(self.address)
         self.printer.print_duration(time.time() - start)
         self.printer.print_connection_stats(self.socket)
@@ -63,13 +65,13 @@ class Client_udp:
             self.fmanager.close_file(path)
 
         self.socket.send_ack(last_recv_seqnum, self.address)
-        package = frst_packg
+        pkg = frst_packg
         while not transmition_complt:
-            self.printer.progressBar(written, package.header.filesz)
-            package = self.socket.listen_for_next_from(last_recv_seqnum)
+            self.printer.progressBar(written, pkg.header.filesz)
+            pkg = self.socket.listen_for_next_from(last_recv_seqnum)
             last_recv_seqnum += 1
 
-            transmition_complt = self.__reconstruct_file(package, path)
+            transmition_complt, written = self.__reconstruct_file(pkg, path)
 
             if transmition_complt:
                 self.fmanager.close_file(path)

@@ -11,7 +11,7 @@ class Client_udp_gbn(Client_udp):
 
     def __init__(self, address, port, fmanager, printer):
         super().__init__(address, port, fmanager, printer)
-        
+
         self.running = True
         self.file_finished = False
 
@@ -37,10 +37,17 @@ class Client_udp_gbn(Client_udp):
             self.seqnum_head += 1
 
     def send_queued_unsent(self):
-        amount_sent = self.seqnum_head - (self.last_sent_seqnum + 1)
+        amount_sent = 0
+
+        # se copia por temas de concurrencia
+        queue = []
+        for pkg in self.sendq:
+            queue.append(pkg)
+            
         for i in range(self.last_sent_seqnum + 1, self.seqnum_head):
-            pkg = self.sendq[i]
+            pkg = queue[i]
             self.socket.send(pkg, self.address)
+            amount_sent += 1
 
         self.last_sent_seqnum += amount_sent
 

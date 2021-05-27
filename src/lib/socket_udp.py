@@ -1,5 +1,5 @@
 from socket import AF_INET, SOCK_DGRAM, socket
-from lib.package import Package, ACK
+from lib.package import Package
 from lib.exceptions import TimeOutException, AbortedException
 import time
 import abc
@@ -7,7 +7,7 @@ import abc
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
-CONNECTION_TIMEOUT = 0.5
+CONNECTION_TIMEOUT = 0.5*1000
 MAX_TIMEOUTS = 3
 
 
@@ -23,6 +23,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.t_bytes_sent = 0
         self.t_bytes_sent_ok = 0
         self.t_bytes_recv = 0
+        self.timeout_limit = CONNECTION_TIMEOUT
 
     def reliable_send(self, package, address, package_queue=None):
         sent = self.send(package, address)
@@ -58,6 +59,7 @@ class socket_udp (metaclass=abc.ABCMeta):
 
         package_recvd = False
         while not package_recvd:
+            time.sleep(0.1)
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
 
             if recv_bytestream:
@@ -84,7 +86,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         sent_seq = last_sent_package.header.seqnum
         is_expected_seqnum = recv_seq == sent_seq
 
-        return self.is_ack() and is_expected_seqnum
+        return recvd_package.is_ack() and is_expected_seqnum
 
     def _reset_timer(self):
         self.last_active = time.time()
@@ -93,7 +95,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.timeouts = 0  # probably a better idea to implement the blocking q
 
     def _active(self):
-        timed_out = (time.time() - self.last_active) > CONNECTION_TIMEOUT
+        timed_out = (time.time() - self.last_active) > self.timeout_limit
 
         if timed_out and self.timeouts < MAX_TIMEOUTS:  # permissible timeout
             self.timeouts = self.timeouts + 1
@@ -109,6 +111,7 @@ class client_socket_udp (socket_udp):
 
     def __init__(self, address, port):
         super().__init__(address, port)
+        self.timeout_limit = CONNECTION_TIMEOUT
 
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
 
@@ -159,6 +162,7 @@ class server_socket_udp (socket_udp):
     def __init__(self, address, port):
         super().__init__(address, port)
         self.always_open = True
+        self.timeout_limit = 2 * CONNECTION_TIMEOUT
 
     def bind(self):
         self.socket.bind((self.address, self.port))

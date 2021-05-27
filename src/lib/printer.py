@@ -99,8 +99,8 @@ class VerbosePrinter(DefaultPrinter):
         self._print(" Total bytes sent ACK'd: " + str(sent_ok))
         self._print(" Total bytes recvd: " + str(sock_stats.t_bytes_recv))
 
-        self._print(" Estimated success rate: "
-                    + str(round(100 * sent_ok/sent, 2))+"%")
+        rate = 100 * sent_ok/sent if sent > 0 else 100
+        self._print(" Estimated success rate: " + str(round(rate, 2))+"%")
         self._print(" ______ ")
 
     def progressBar(self, current, total, barLength=20):

@@ -71,7 +71,7 @@ class Connection_instance:
             if package.header.seqnum == last_recv_seqnum + 1:
                 finished = self.__reconstruct_file(package, path)
                 last_recv_seqnum += 1
-            
+
             self.socket.send_ack(last_recv_seqnum, self.address)
 
             if finished:
@@ -90,7 +90,7 @@ class Connection_instance:
         seqnum = request.header.seqnum
         bytes_sent = 0
 
-        while self.running and bytes_sent < filesz:
+        while bytes_sent < filesz:
             header = Header(seqnum, DOWNLOAD, path, name, filesz)
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
@@ -143,7 +143,11 @@ class Server_udp:
                 self.demux(package, address)
             except ConnectionResetError:
                 pass
-        self.printer.print_connection_stats(self.socket)
+            except KeyboardInterrupt:
+                break
+            finally:
+                self.printer.print_connection_stats(self.socket)
+        self.socket.socket.close()
 
     def demux(self, package, address):
         if address not in self.active_connections:
