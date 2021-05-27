@@ -116,15 +116,18 @@ class client_socket_udp (socket_udp):
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
 
         package_recvd = False
-        while not package_recvd and self._active():
-            recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
-            self.t_bytes_recv += len(recv_bytestream)
+        try:
+            while not package_recvd and self._active():
+                recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
+                self.t_bytes_recv += len(recv_bytestream)
 
-            if recv_bytestream:
-                package = Package.deserialize(recv_bytestream)
-                recvd_seqnum = package.header.seqnum
-                package_recvd = recvd_seqnum == (last_recvd_seqnum + 1)
-
+                if recv_bytestream:
+                    package = Package.deserialize(recv_bytestream)
+                    recvd_seqnum = package.header.seqnum
+                    package_recvd = recvd_seqnum == (last_recvd_seqnum + 1)
+        except TimeOutException:
+            pass
+        self. _reset_timer()
         return package
 
     def recv_with_timer(self, package_queue=None):
