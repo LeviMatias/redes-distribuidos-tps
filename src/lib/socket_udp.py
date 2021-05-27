@@ -59,7 +59,7 @@ class socket_udp (metaclass=abc.ABCMeta):
 
         package_recvd = False
         while not package_recvd:
-            time.sleep(0.1)
+            time.sleep(0.2)
             recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
 
             if recv_bytestream:

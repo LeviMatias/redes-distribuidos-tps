@@ -38,14 +38,8 @@ class Client_udp_gbn(Client_udp):
 
     def send_queued_unsent(self):
         amount_sent = 0
-
-        # se copia por temas de concurrencia
-        queue = []
-        for pkg in self.sendq:
-            queue.append(pkg)
-            
-        for i in range(self.last_sent_seqnum + 1, self.seqnum_head):
-            pkg = queue[i]
+        unsent = self.sendq[self.last_sent_seqnum + 1: self.seqnum_head]
+        for pkg in unsent:
             self.socket.send(pkg, self.address)
             amount_sent += 1
 
@@ -57,10 +51,10 @@ class Client_udp_gbn(Client_udp):
             if pkg.is_ack():
                 ack_seqnum = pkg.header.seqnum
                 self.window_base = ack_seqnum
-                self.sendq = self.sendq[self.window_base:]
 
     def send_all_queued(self):
-        for pkg in self.sendq:
+        unkacked = self.sendq[self.window_base: self.seqnum_head]
+        for pkg in unkacked:
             self.socket.send(pkg, self.address)
 
     def do_upload(self, path, name):
