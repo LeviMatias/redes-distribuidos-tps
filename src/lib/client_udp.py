@@ -11,6 +11,7 @@ class Client_udp:
         self.address = (address, port)
         self.fmanager = fmanager
         self.printer = printer
+        self.running = True
 
     def upload(self, path, name):
         self._data_transfer(path, name, self.do_upload)
@@ -34,6 +35,7 @@ class Client_udp:
 
     def do_upload(self, path, name):
 
+        print('S&W upload')
         filesz = self.fmanager.get_size(path)
         seqnum = 0
         sent = 0
@@ -54,28 +56,34 @@ class Client_udp:
         self.printer.print_upload_finished(name)
 
     def do_download(self, path, name):
+
+        print('GBN and S&W download')
         last_recv_seqnum = -1
+        transmit_complt = False
 
         req_pkg = Package.create_download_request(name)
-        frst_packg = self.socket.reliable_send_and_recv(req_pkg, self.address)
-        last_recv_seqnum += 1
-        transmition_complt, written = self.__reconstruct_file(frst_packg, path)
+        pkg = self.socket.reliable_send_and_recv(req_pkg, self.address)
 
-        if transmition_complt:
-            self.fmanager.close_file(path)
+        if pkg.header.seqnum == (last_recv_seqnum + 1):
+            last_recv_seqnum += 1
+            transmit_complt, written = self.__reconstruct_file(pkg, path)
+            self.printer.progressBar(written, pkg.header.filesz)
+
+            if transmit_complt:
+                self.fmanager.close_file(path)
 
         self.socket.send_ack(last_recv_seqnum, self.address)
-        pkg = frst_packg
-        while not transmition_complt:
+
+        while not transmit_complt:
 
             pkg, _ = self.socket.blocking_recv()
 
             if pkg.header.seqnum == (last_recv_seqnum + 1):
                 last_recv_seqnum += 1
-                transmition_complt, written = self.__reconstruct_file(pkg, path)
+                transmit_complt, written = self.__reconstruct_file(pkg, path)
                 self.printer.progressBar(written, pkg.header.filesz)
 
-                if transmition_complt:
+                if transmit_complt:
                     self.fmanager.close_file(path)
 
             self.socket.send_ack(last_recv_seqnum, self.address)

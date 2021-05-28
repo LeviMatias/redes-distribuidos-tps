@@ -75,7 +75,6 @@ class socket_udp (metaclass=abc.ABCMeta):
         return package, address
 
     def send(self, package, address):
-        #print(package.header.seqnum)
         bytestream = Package.serialize(package)
         self.socket.sendto(bytestream, address)
         sz = len(bytestream)
@@ -199,6 +198,17 @@ class server_socket_udp (socket_udp):
 
         recvd_package = None
         while not recvd_package and self._active():
+
+            if not package_queue.empty():
+                recvd_package = package_queue.get()
+                recvd_package.validate()
+
+        return recvd_package
+
+    def blocking_recv_through(self, package_queue=None):
+
+        recvd_package = None
+        while not recvd_package:
 
             if not package_queue.empty():
                 recvd_package = package_queue.get()
