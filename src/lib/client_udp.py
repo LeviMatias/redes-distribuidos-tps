@@ -82,3 +82,7 @@ class Client_udp:
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')
         return written >= package.header.filesz, written
+
+    def close(self):
+        self.socket.close()
+        self.running = False

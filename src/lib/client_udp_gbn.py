@@ -5,7 +5,7 @@ from lib.package import Package, Header, UPLOAD
 from lib.timer import Timer
 from lib.exceptions import TimeOutException
 
-W_SIZE = 15
+W_SIZE = 200
 
 
 class Client_udp_gbn(Client_udp):
@@ -49,6 +49,7 @@ class Client_udp_gbn(Client_udp):
     def recv_acks(self, timer):
         while not self.file_finished and self.running:
             pkg, _ = self.socket.blocking_recv()
+            #print(f'recived pkg: {pkg.get_type()}, {pkg.header.seqnum}')
             if pkg.is_ack():
                 ack_seqnum = pkg.header.seqnum
                 self.window_base = ack_seqnum
@@ -73,12 +74,14 @@ class Client_udp_gbn(Client_udp):
                     self.fill_sending_queue(path, name)
                     self.send_queued_unsent()
                 except TimeOutException:
+                    #print("time out")
+                    #print(f'Window full?: window base: {self.window_base}, last_sent_seqnum: {self.last_sent_seqnum}, head: {self.seqnum_head}, windo size: {W_SIZE}')
                     timer.reset()
                     self.send_all_queued()
             timer.stop()
         except (KeyboardInterrupt, ConnectionResetError):
             timer.stop()
 
-        self.running = False
+        self.close()
         self.fmanager.close_file(path)
         acks_listener.join()

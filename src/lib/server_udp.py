@@ -60,6 +60,7 @@ class Connection_instance:
     def do_upload(self, firts_pckg):
 
         name = firts_pckg.header.name
+        size = firts_pckg.header.filesz
         path = self.fmanager.SERVER_BASE_PATH + name
         self.in_use_file_path = path
 
@@ -69,10 +70,12 @@ class Connection_instance:
         while self.running and not transmition_complt:
 
             if package.header.seqnum == last_recv_seqnum + 1:
-                finished = self.__reconstruct_file(package, path)
+                finished, written = self.__reconstruct_file(package, path)
+                self.printer.progressBar(written, size)
                 last_recv_seqnum += 1
-            else:
-                print(f'our of order. Recived {package.header.seqnum}, expected {last_recv_seqnum + 1}')
+            #else:
+                #print(f'our of order. Recived {package.header.seqnum}, ' +
+                      #f'expected {last_recv_seqnum + 1}')
 
             self.socket.send_ack(last_recv_seqnum, self.address)
 
@@ -113,7 +116,7 @@ class Connection_instance:
 
     def __reconstruct_file(self, package, server_file_path):
         written = self.fmanager.write(server_file_path, package.payload, 'wb')
-        return written >= package.header.filesz
+        return written >= package.header.filesz, written
 
     def join(self):
         self.thread.join()
@@ -147,8 +150,6 @@ class Server_udp:
                 pass
             except KeyboardInterrupt:
                 break
-            finally:
-                self.printer.print_connection_stats(self.socket)
         self.socket.socket.close()
 
     def demux(self, package, address):
@@ -169,8 +170,8 @@ class Server_udp:
         while True:
             time.sleep(CONNECTION_TIMEOUT)
             abortpckg = AbortPackage()
-
-            self.active_connections = {addr: c for addr, c
-                                       in self.active_connections.items()
-                                       if c.is_active() or c.push(abortpckg)
-                                       or c.join()}
+            for addr, connection in self.active_connections.items():
+                if not connection.is_active():
+                    connection.push(abortpckg)
+                    connection.join()
+                    self.printer.print_connection_stats(self.socket)

@@ -4,7 +4,7 @@ from lib.exceptions import TimeOutException, AbortedException
 import time
 import abc
 
-CHUNK_SIZE = 1024
+CHUNK_SIZE = 1024*5
 PAYLOAD_SIZE = 1024
 
 CONNECTION_TIMEOUT = 0.5
@@ -24,6 +24,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.t_bytes_sent_ok = 0
         self.t_bytes_recv = 0
         self.timeout_limit = CONNECTION_TIMEOUT
+        self.running = True
 
     def reliable_send(self, package, address, package_queue=None):
         sent = self.send(package, address)
@@ -58,19 +59,22 @@ class socket_udp (metaclass=abc.ABCMeta):
     def blocking_recv(self):
 
         package_recvd = False
-        while not package_recvd:
-            time.sleep(0.1)
-            recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+        while not package_recvd and self.running:
+            try:
+                recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
 
-            if recv_bytestream:
-                self.t_bytes_recv += len(recv_bytestream)
-                package = Package.deserialize(recv_bytestream)
-                package_recvd = True
+                if recv_bytestream:
+                    self.t_bytes_recv += len(recv_bytestream)
+                    package = Package.deserialize(recv_bytestream)
+                    package_recvd = True
+            except OSError:
+                pass
+                #print('OSError')
 
         return package, address
 
     def send(self, package, address):
-        print(package.header.seqnum)
+        #print(package.header.seqnum)
         bytestream = Package.serialize(package)
         self.socket.sendto(bytestream, address)
         sz = len(bytestream)
@@ -106,6 +110,9 @@ class socket_udp (metaclass=abc.ABCMeta):
             raise AbortedException()  # connection assumed lost
         else:
             return True
+
+    def close(self):
+        self.running = False
 
 
 class client_socket_udp (socket_udp):
