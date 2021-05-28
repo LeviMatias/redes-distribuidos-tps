@@ -6,12 +6,12 @@ CADA VEZ QUE SE DETECTA UN PAQUETE PERDIDO EL VERBOSE DEBERIA LOGEAR ESE HECHO
 test_1
 upload con dir incorrecta
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python upload-file -H localhost -p 9000 -s ./lib/files-client/wrong_name -n namesv1.txt -v
+	python upload-file -H localhost -p 9000 -s ./lib/files-client/wrong_name -n server1 -v
 
 test_2
 download con dir incorrecta
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
-	python download-file -H localhost -p 9000 -d ./lib/files-client/namecl1.txt -n wrong_name -v
+	python download-file -H localhost -p 9000 -d ./lib/files-client/client1.txt -n wrong_name -v
 
 test_3
 upload con dir correcta large file txt

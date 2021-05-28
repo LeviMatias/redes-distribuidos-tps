@@ -62,6 +62,8 @@ class Client_udp_gbn(Client_udp):
 
     def do_upload(self, path, name):
 
+        fsize = self.fmanager.get_size(path)
+
         timer = Timer(CONNECTION_TIMEOUT)
         acks_listener = Thread(args=[timer], target=self.recv_acks)
         acks_listener.start()
@@ -73,6 +75,9 @@ class Client_udp_gbn(Client_udp):
                     timer.update()
                     self.fill_sending_queue(path, name)
                     self.send_queued_unsent()
+
+                    b_arrived = self.last_sent_seqnum * CHUNK_SIZE
+                    self.printer.progressBar(b_arrived, fsize)
                 except TimeOutException:
                     #print("time out")
                     #print(f'Window full?: window base: {self.window_base}, last_sent_seqnum: {self.last_sent_seqnum}, head: {self.seqnum_head}, windo size: {W_SIZE}')
@@ -81,6 +86,10 @@ class Client_udp_gbn(Client_udp):
             timer.stop()
         except (KeyboardInterrupt, ConnectionResetError):
             timer.stop()
+
+        print(self.window_base)
+        b_arrived = self.last_sent_seqnum * CHUNK_SIZE
+        self.printer.progressBar(b_arrived, fsize)
 
         self.close()
         self.fmanager.close_file(path)

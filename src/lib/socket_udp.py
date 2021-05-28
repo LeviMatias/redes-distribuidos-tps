@@ -27,22 +27,24 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.running = True
 
     def reliable_send(self, package, address, package_queue=None):
-        sent = self.send(package, address)
-        try:
-            self._recv_ack_to(package, package_queue)
-            self.t_bytes_sent_ok += sent
-        except TimeOutException:
-            self.reliable_send(package, address, package_queue)
+        for i in range(MAX_TIMEOUTS + 1):
+            try:
+                sent = self.send(package, address)
+                self._recv_ack_to(package, package_queue)
+                self.t_bytes_sent_ok += sent
+            except TimeOutException:
+                continue
 
     def reliable_send_and_recv(self, package, address, package_queue=None):
-        recv_package = None
-        sent = self.send(package, address)
-        try:
-            recv_package, _ = self.recv_with_timer(package_queue)
-            self.t_bytes_sent_ok += sent
-            return recv_package
-        except TimeOutException:
-            self.reliable_send_and_recv(package, address, package_queue)
+        for i in range(MAX_TIMEOUTS + 1):
+            try:
+                sent = self.send(package, address)
+                recv_package, _ = self.recv_with_timer(package_queue)
+                self.t_bytes_sent_ok += sent
+                break
+            except TimeOutException:
+                continue
+        return recv_package
 
     @abc.abstractmethod
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
@@ -69,7 +71,6 @@ class socket_udp (metaclass=abc.ABCMeta):
                     package_recvd = True
             except OSError:
                 pass
-                #print('OSError')
 
         return package, address
 
@@ -124,8 +125,8 @@ class client_socket_udp (socket_udp):
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
 
         package_recvd = False
-        try:
-            while not package_recvd and self._active():
+        while not package_recvd and self._active():
+            try:
                 recv_bytestream, _ = self.socket.recvfrom(CHUNK_SIZE)
                 self.t_bytes_recv += len(recv_bytestream)
 
@@ -133,8 +134,8 @@ class client_socket_udp (socket_udp):
                     package = Package.deserialize(recv_bytestream)
                     recvd_seqnum = package.header.seqnum
                     package_recvd = recvd_seqnum == (last_recvd_seqnum + 1)
-        except TimeOutException:
-            pass
+            except (TimeOutException, OSError):
+                pass
         self. _reset_timer()
         return package
 
@@ -142,12 +143,15 @@ class client_socket_udp (socket_udp):
 
         package_recvd = False
         while not package_recvd and self._active():
-            recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
-            self.t_bytes_recv += len(recv_bytestream)
+            try:
+                recv_bytestream, address = self.socket.recvfrom(CHUNK_SIZE)
+                self.t_bytes_recv += len(recv_bytestream)
 
-            if recv_bytestream:
-                package = Package.deserialize(recv_bytestream)
-                package_recvd = True
+                if recv_bytestream:
+                    package = Package.deserialize(recv_bytestream)
+                    package_recvd = True
+            except OSError:
+                pass
 
         return package, address
 

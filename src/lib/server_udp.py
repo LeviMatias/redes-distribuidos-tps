@@ -169,9 +169,15 @@ class Server_udp:
     def _periodic_clean(self):
         while True:
             time.sleep(CONNECTION_TIMEOUT)
-            abortpckg = AbortPackage()
+
+            dead_connections = {}
             for addr, connection in self.active_connections.items():
                 if not connection.is_active():
-                    connection.push(abortpckg)
+                    connection.push(AbortPackage())
                     connection.join()
                     self.printer.print_connection_stats(self.socket)
+                    dead_connections[addr] = connection
+
+            for addr in dead_connections:
+                del self.active_connections[addr]
+                 

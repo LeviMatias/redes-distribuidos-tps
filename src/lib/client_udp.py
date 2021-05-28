@@ -67,14 +67,16 @@ class Client_udp:
         self.socket.send_ack(last_recv_seqnum, self.address)
         pkg = frst_packg
         while not transmition_complt:
-            self.printer.progressBar(written, pkg.header.filesz)
-            pkg = self.socket.listen_for_next_from(last_recv_seqnum)
-            last_recv_seqnum += 1
 
-            transmition_complt, written = self.__reconstruct_file(pkg, path)
+            pkg, _ = self.socket.blocking_recv()
 
-            if transmition_complt:
-                self.fmanager.close_file(path)
+            if pkg.header.seqnum == (last_recv_seqnum + 1):
+                last_recv_seqnum += 1
+                transmition_complt, written = self.__reconstruct_file(pkg, path)
+                self.printer.progressBar(written, pkg.header.filesz)
+
+                if transmition_complt:
+                    self.fmanager.close_file(path)
 
             self.socket.send_ack(last_recv_seqnum, self.address)
         self.printer.print_download_finished(name)
