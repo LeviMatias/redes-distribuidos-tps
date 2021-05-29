@@ -104,7 +104,7 @@ class socket_udp (metaclass=abc.ABCMeta):
             raise TimeOutException()
         elif timed_out and not self.always_open:  # reached timeout limit
             raise AbortedException()  # connection assumed lost
-        
+
         print("active")
         self.timeouts = 0
         return True
