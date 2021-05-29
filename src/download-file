@@ -12,6 +12,9 @@ if __name__ == "__main__":
     help, host, port, path, name, printer = ArgParser.parse_client_side(sys.argv)
 
     if not help:
-        client = Client_udp(host, port, FileManager(), printer)
-        client.download(path, name)
+        try:
+            client = Client_udp(host, port, FileManager(), printer)
+            client.download(path, name)
+        except ConnectionResetError:
+            print("Could not find a server running at the provided address")
 

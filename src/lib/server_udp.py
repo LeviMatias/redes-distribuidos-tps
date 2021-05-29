@@ -54,6 +54,7 @@ class Connection_instance:
             self.printer.print_connection_lost(self.address)
 
         self.printer.print_connection_finished(self.address)
+        self.printer.print_connection_stats(self.socket)
         self.printer.print_duration(time.time() - start)
         self.__close()
 

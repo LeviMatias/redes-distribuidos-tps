@@ -61,13 +61,11 @@ class QuietPrinter:
 class DefaultPrinter(QuietPrinter):
 
     def print_connection_established(self, addr):
-        self._print(" ______ ")
         msg = "connection with " + addr[0] + ":" + str(addr[1]) + " started"
         self._print(msg)
 
     def print_connection_finished(self, addr):
         msg = "connection with " + addr[0] + ":" + str(addr[1]) + " finished"
-        self._print(" ______ ")
         self._print(msg)
 
     def print_begin_transfer(self, filename):
@@ -93,14 +91,17 @@ class VerbosePrinter(DefaultPrinter):
 
     def print_connection_stats(self, sock_stats):
         self._print(" ______ ")
+        addr = sock_stats.address
+        self._print(" Connection with " + addr[0] + ":" + str(addr[1]) )
         sent = sock_stats.t_bytes_sent
         sent_ok = sock_stats.t_bytes_sent_ok
         self._print(" Total bytes sent: " + str(sent))
         self._print(" Total bytes sent ACK'd: " + str(sent_ok))
         self._print(" Total bytes recvd: " + str(sock_stats.t_bytes_recv))
+        self._print(" Total times timed out: " + str(sock_stats.t_timeouts))
 
-        self._print(" Estimated success rate: "
-                    + str(round(100 * sent_ok/sent, 2))+"%")
+        self._print(" Estimated send fail rate: "
+                    + str(100 - round(100 * sent_ok/sent, 2))+"%")
         self._print(" ______ ")
 
     def progressBar(self, current, total, barLength=20):
