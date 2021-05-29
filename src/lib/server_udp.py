@@ -11,8 +11,8 @@ from lib.exceptions import AbortedException
 
 
 class Connection_instance:
-    def __init__(self, socket, address, fmanager, printer):
-        self.socket = socket
+    def __init__(self, address, fmanager, printer):
+        self.socket = server_socket_udp(address[0], address[1])
         self.address = address
         self.fmanager = fmanager
         self.printer = printer
@@ -152,7 +152,7 @@ class Server_udp:
         self.active_connections[address].push(package)
 
     def create_connection_with(self, addr):
-        c = Connection_instance(self.socket, addr, self.fmanager, self.printer)
+        c = Connection_instance(addr, self.fmanager, self.printer)
         c.start()
         self.active_connections[addr] = c
 
