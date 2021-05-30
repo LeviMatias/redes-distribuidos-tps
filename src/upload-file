@@ -1,5 +1,6 @@
 import sys
 from lib.client_udp import Client_udp
+from lib.client_udp_gbn import Client_udp_gbn
 from lib.file_manager import FileManager
 from lib.argument_parser import ArgParser
 from lib.printer import VerbosePrinter
@@ -13,8 +14,8 @@ if __name__ == "__main__":
 
     if not help:
         try:
-            client = Client_udp(host, port, FileManager(), printer)
-            client.upload(path, name)
+            client = Client_udp_gbn(host, port, FileManager(), printer)
+            client.do_upload(path, name)
         except ConnectionResetError:
             print("Could not find a server running at the provided address")
             

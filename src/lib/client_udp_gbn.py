@@ -1,51 +1,106 @@
+from threading import Thread
+from math import ceil
+
 from lib.client_udp import Client_udp
-from lib.socket_udp import CHUNK_SIZE
+from lib.socket_udp import CHUNK_SIZE, CONNECTION_TIMEOUT
 from lib.package import Package, Header, UPLOAD
+from lib.timer import Timer
 from lib.exceptions import TimeOutException
 
-W_SIZE = 5
+W_SIZE = 200
 
 
 class Client_udp_gbn(Client_udp):
 
-    def do_upload(self, path, name):
+    def __init__(self, address, port, fmanager, printer):
+        super().__init__(address, port, fmanager, printer)
+
+        self.window_base = 0
+        self.last_sent_seqnum = -1
+        self.seqnum_head = 0
+        self.sendq = []
+
+    def window_full(self):
+        return (self.seqnum_head - self.window_base) == W_SIZE
+
+    def fill_sending_queue(self, path, name):
 
         filesz = self.fmanager.get_size(path)
-        seqnum = 0
-        sent = 0
-
-        sendq = []
         file_finished = False
-        while sent < filesz:
-            while len(sendq) < W_SIZE:
-                header = Header(seqnum, UPLOAD, path, name, filesz)
-                size = CHUNK_SIZE - header.size
-                payload = self.fmanager.read_chunk(size, path, how='rb')
-                if (len(payload) == 0):
-                    file_finished = True
-                    break
+        while not self.window_full() and not file_finished:
+            header = Header(self.seqnum_head, UPLOAD, path, name, filesz)
+            size = CHUNK_SIZE - header.size
+            payload = self.fmanager.read_chunk(size, path, how='rb')
+            
+            if (len(payload) == 0):
+                file_finished = True
+            else:
                 pkg = Package(header, payload)
-                sendq.append(pkg)
-                seqnum += 1
+                self.sendq.append(pkg)
+                self.seqnum_head += 1
 
-            while len(sendq) >= W_SIZE or (file_finished and len(sendq) > 0):
-                for package in sendq:
-                    self.socket.send(package, self.address)
-                    package.acked = False
+    def send_queued_unsent(self):
+        amount_sent = 0
+        unsent = self.sendq[self.last_sent_seqnum + 1: self.seqnum_head]
+        for pkg in unsent:
+            self.socket.send(pkg, self.address)
+            amount_sent += 1
 
+        self.last_sent_seqnum += amount_sent
+
+    def recv_acks(self, timer):
+        while self.running:
+            pkg, _ = self.socket.blocking_recv()
+
+            if not pkg:
+                break
+                # el blocking_recv devuelve None si el socket cierra
+
+            if pkg.is_ack():
+                ack_seqnum = pkg.header.seqnum
+                self.window_base = ack_seqnum
+                timer.reset()
+
+    def send_all_queued(self):
+        unkacked = self.sendq[self.window_base: self.seqnum_head]
+        for pkg in unkacked:
+            self.socket.send(pkg, self.address)
+
+    def do_upload(self, path, name):
+
+        print('GBN upload')
+        fsize = self.fmanager.get_size(path)
+        end_seqnum = ceil(fsize/CHUNK_SIZE)
+
+        timer = Timer(CONNECTION_TIMEOUT)
+        acks_listener = Thread(args=[timer], target=self.recv_acks)
+        acks_listener.start()
+
+        timer.start()
+        transfer_complt = False
+        try:
+            while not transfer_complt and self.running:
                 try:
-                    waiting_for = len(sendq)
-                    while waiting_for > 0:
-                        acked, _ = self.socket.recv_with_timer()
-                        for package in sendq:
-                            if package.header.seqnum == acked.header.seqnum:
-                                package.acked = True
-                                waiting_for -= 1
+                    timer.update()
+                    self.fill_sending_queue(path, name)
+                    self.send_queued_unsent()
+
+                    if self.window_base == (end_seqnum - 1):
+                        transfer_complt = True
+
+                    b_arrived = self.last_sent_seqnum * CHUNK_SIZE
+                    self.printer.progressBar(b_arrived, fsize)
                 except TimeOutException:
-                    pass  # count number of timeouts and abort
+                    timer.reset()
+                    self.send_all_queued()
+            timer.stop()
+        except (KeyboardInterrupt, ConnectionResetError):
+            timer.stop()
 
-                while len(sendq) > 0 and sendq[0].acked:
-                    sent += len(sendq[0].payload)
-                    sendq.pop()
+        b_arrived = self.last_sent_seqnum * CHUNK_SIZE
+        self.printer.progressBar(b_arrived, fsize)
+        self.printer.print_upload_finished(name)
 
+        self.close()
         self.fmanager.close_file(path)
+        acks_listener.join()

@@ -78,6 +78,9 @@ class Package:
     def validate(self):
         pass
 
+    def is_ack(self):
+        return self.header.req == ACK
+
 
 class AbortPackage(Package):
 

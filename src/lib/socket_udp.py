@@ -1,12 +1,12 @@
 from socket import AF_INET, SOCK_DGRAM, socket
-from lib.package import Package, ACK
+from lib.package import Package
 from lib.exceptions import TimeOutException, AbortedException
 import time
 import abc
 # import random
 
-CHUNK_SIZE = 1024
-PAYLOAD_SIZE = 1024
+CHUNK_SIZE = 1024 * 10
+PAYLOAD_SIZE = CHUNK_SIZE
 
 CONNECTION_TIMEOUT = 0.5
 MAX_TIMEOUTS = 3
@@ -29,20 +29,22 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.client = False
         self.socket.setblocking(False)
         self.t_timeouts = 0
+        self.running = True
 
     def _recv(self):
         try:
             return self.socket.recvfrom(CHUNK_SIZE)
-        except BlockingIOError:
+        except (BlockingIOError, OSError):
             return None, None
 
     def reliable_send(self, package, address, package_queue=None):
-        sent = self.send(package, address)
-        try:
-            self._recv_ack_to(package, package_queue)
-            self.t_bytes_sent_ok += sent
-        except TimeOutException:
-            self.reliable_send(package, address, package_queue)
+        for i in range(MAX_TIMEOUTS + 1):
+            try:
+                sent = self.send(package, address)
+                self._recv_ack_to(package, package_queue)
+                self.t_bytes_sent_ok += sent
+            except TimeOutException:
+                continue
 
     def reliable_send_and_recv(self, package, address, package_queue=None):
         pass
@@ -59,8 +61,10 @@ class socket_udp (metaclass=abc.ABCMeta):
 
     def blocking_recv(self):
 
+        package = None
+        address = None
         package_recvd = False
-        while not package_recvd:
+        while not package_recvd and self.running:
             recv_bytestream, address = self._recv()
 
             if recv_bytestream:
@@ -87,13 +91,11 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.t_bytes_sent_ok += sent
 
     def _is_correct_ack(self, recvd_package, last_sent_package):
-        is_ack = recvd_package.header.req == ACK
-
         recv_seq = recvd_package.header.seqnum
         sent_seq = last_sent_package.header.seqnum
         is_expected_seqnum = recv_seq == sent_seq
 
-        return is_ack and is_expected_seqnum
+        return recvd_package.is_ack() and is_expected_seqnum
 
     def _reset_timer(self):
         self.last_active = time.time()
@@ -114,6 +116,9 @@ class socket_udp (metaclass=abc.ABCMeta):
             raise AbortedException()  # connection assumed lost
 
         return True
+
+    def close(self):
+        self.running = False
 
 
 class client_socket_udp (socket_udp):
@@ -195,6 +200,17 @@ class server_socket_udp (socket_udp):
 
     def bind(self):
         self.socket.bind((self.address, self.port))
+
+    def blocking_recv_through(self, package_queue=None):
+
+        recvd_package = None
+        while not recvd_package:
+
+            if not package_queue.empty():
+                recvd_package = package_queue.get()
+                recvd_package.validate()
+
+        return recvd_package
 
     def _recv_ack_to(self, package, package_queue=None):
         ack_recvd = False
