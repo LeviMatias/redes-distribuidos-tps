@@ -3,12 +3,12 @@ from lib.package import Package, ACK
 from lib.exceptions import TimeOutException, AbortedException
 import time
 import abc
-import random
+# import random
 
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
-CONNECTION_TIMEOUT = 30
+CONNECTION_TIMEOUT = 0.5
 MAX_TIMEOUTS = 3
 
 
@@ -75,9 +75,9 @@ class socket_udp (metaclass=abc.ABCMeta):
         sz = len(bytestream)
         self.t_bytes_sent += sz
 
-        if self.client and random.randint(0, 100) < 20:
-            print("dropping " + str(package.header.seqnum))
-            return 0
+        # if random.randint(0, 100) < 20:
+        #    print("dropping " + str(package.header.seqnum))
+        #    return 0
         self.socket.sendto(bytestream, address)
         return sz
 
@@ -173,9 +173,9 @@ class client_socket_udp (socket_udp):
         ack_recvd = False
         while not ack_recvd and self._active():
             recv_bytestream, _ = self._recv()
-            self.t_bytes_recv += len(recv_bytestream)
 
             if recv_bytestream:
+                self.t_bytes_recv += len(recv_bytestream)
                 recvd_package = Package.deserialize(recv_bytestream)
 
                 if self._is_correct_ack(recvd_package, package):

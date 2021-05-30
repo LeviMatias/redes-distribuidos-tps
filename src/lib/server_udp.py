@@ -39,6 +39,7 @@ class Connection_instance:
     def dispatch(self):
         start = time.time()
         self.printer.print_connection_established(self.address)
+        aborted = False
         try:
             first = self.pull()
             ptype = first.header.req
@@ -50,11 +51,13 @@ class Connection_instance:
                 self.do_download(first)
 
         except AbortedException:
+            aborted = True
             if self.in_use_file_path:
                 self.fmanager.close_file(self.in_use_file_path)
             self.printer.print_connection_lost(self.address)
 
-        self.printer.print_connection_finished(self.address)
+        if not aborted:
+            self.printer.print_connection_finished(self.address)
         self.printer.print_connection_stats(self.socket)
         self.printer.print_duration(time.time() - start)
         self.__close()
