@@ -5,11 +5,10 @@ import time
 import abc
 import random
 
-random.seed(1)
 CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
-CONNECTION_TIMEOUT = 0.5
+CONNECTION_TIMEOUT = 30
 MAX_TIMEOUTS = 3
 
 
@@ -76,7 +75,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         sz = len(bytestream)
         self.t_bytes_sent += sz
 
-        if self.server and random.randint(0, 100) < 20:
+        if self.client and random.randint(0, 100) < 20:
             print("dropping " + str(package.header.seqnum))
             return 0
         self.socket.sendto(bytestream, address)
@@ -149,7 +148,7 @@ class client_socket_udp (socket_udp):
                     recvd_seqnum = package.header.seqnum
                     package_recvd = recvd_seqnum == (last_recvd_seqnum + 1)
             except TimeOutException:
-                pass
+                self.send_ack(last_recvd_seqnum, (self.address, self.port))
         self._reset_timer()
         self._reset_timeouts()
         return package
@@ -192,7 +191,7 @@ class server_socket_udp (socket_udp):
         super().__init__(address, port)
         self.always_open = True
         self.server = True
-        self.timeout_limit = 2 * CONNECTION_TIMEOUT
+        self.timeout_limit = CONNECTION_TIMEOUT
 
     def bind(self):
         self.socket.bind((self.address, self.port))

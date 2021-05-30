@@ -28,6 +28,7 @@ class Connection_instance:
     def pull(self):
         package = self.pckg_queue.get()
         package.validate()
+        self.socket.t_bytes_recv += len(package.payload) + package.header.size
         return package
 
     def start(self):
