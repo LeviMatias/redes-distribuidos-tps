@@ -98,8 +98,9 @@ class VerbosePrinter(DefaultPrinter):
         self._print(" Total bytes recvd: " + str(sock_stats.t_bytes_recv))
         self._print(" Total times timed out: " + str(sock_stats.t_timeouts))
 
-        self._print(" Estimated payload send fail rate: "
-                    + str(round(100 - 100 * sent_ok/sent, 2))+"%")
+        if sent > 0:
+            self._print(" Estimated payload send fail rate: "
+                        + str(round(100 - 100 * sent_ok/sent, 2))+"%")
         self._print(" ______ ")
 
     def progressBar(self, current, total, barLength=20):
