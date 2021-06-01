@@ -31,10 +31,10 @@ class FileManager:
         return self.get_file(path, 'rb').read(chunk_size)
 
     def close_file(self, path):
-        file = self.get_file(path, 'rb', create=False)
-        if file:
+        if path in self.opened_files:
+            file = self.get_file(path, 'rb')
             file.close()
-        self.remove(path)
+            self.remove(path)
 
     def remove(self, path):
         del self.opened_files[path]

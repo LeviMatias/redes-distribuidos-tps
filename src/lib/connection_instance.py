@@ -4,14 +4,16 @@ from threading import Thread
 
 
 from lib.package import DOWNLOAD, UPLOAD
-from lib.exceptions import AbortedException
+from lib.exceptions import AbortedException, ConnectionInterrupt, TimeOutException
 from lib.package import Package, Header
-from lib.socket_udp import CHUNK_SIZE
+from lib.socket_udp import server_socket_udp
+from lib.socket_udp import CHUNK_SIZE, MAX_TIMEOUTS, CONNECTION_TIMEOUT
+from lib.timer import Timer
 
 
 class Connection_instance:
-    def __init__(self, socket, address, fmanager, printer):
-        self.socket = socket
+    def __init__(self, address, fmanager, printer):
+        self.socket = server_socket_udp(address[0], address[1])
         self.address = address
         self.fmanager = fmanager
         self.printer = printer
@@ -25,6 +27,8 @@ class Connection_instance:
 
     def pull(self):
         package = self.pckg_queue.get()
+        package.validate()
+        self.socket.update_recv_stats(package)
         return package
 
     def start(self):
@@ -45,45 +49,61 @@ class Connection_instance:
             elif ptype == DOWNLOAD:
                 self.do_download(first)
 
-        except AbortedException:
-            if self.in_use_file_path:
-                self.fmanager.close_file(self.in_use_file_path)
+        except (AbortedException, ConnectionResetError):
             self.printer.print_connection_lost(self.address)
-
-        self.printer.print_connection_finished(self.address)
-        self.printer.print_duration(time.time() - start)
+        except ConnectionInterrupt:
+            pass
+        except FileNotFoundError:
+            if self.in_use_file_path:
+                self.printer.print_file_not_found(self.in_use_file_path)
+        finally:
+            self.close()
+            self.printer.print_connection_finished(self.address)
+            self.printer.print_duration(time.time() - start)
 
     def do_upload(self, firts_pckg):
 
-        print('GBN and S&W upload')
+        self.printer._print('GBN and S&W upload')
         name = firts_pckg.header.name
         size = firts_pckg.header.filesz
         path = self.fmanager.SERVER_BASE_PATH + name
         self.in_use_file_path = path
 
         last_recv_seqnum = -1
-        package = firts_pckg
-        transmition_complt = False
-        while self.running and not transmition_complt:
+        pkg = firts_pckg
+        transmition_cmplt = False
 
-            if package.header.seqnum == last_recv_seqnum + 1:
-                finished, written = self.__reconstruct_file(package, path)
-                self.printer.progressBar(written, size)
-                last_recv_seqnum += 1
+        timer = Timer(self.socket.timeout_limit)
+        timer.start()
+        timeouts = 0
+        while self.running and not transmition_cmplt:
+            try:
+                timer.update()
+                if pkg.header.seqnum == last_recv_seqnum + 1:
+                    transmition_cmplt, written = self.__reconstruct_file(pkg, path)
+                    self.printer.conn_stats(self.socket, written, size)
+                    last_recv_seqnum += 1
 
-            self.socket.send_ack(last_recv_seqnum, self.address)
+                self.socket.send_ack(last_recv_seqnum, self.address)
 
-            if finished:
-                self.fmanager.close_file(path)
-                self.__close()
-                transmition_complt = True
-            else:
-                package = self.pull()
+                if transmition_cmplt:
+                    self.fmanager.close_file(path)
+                    self.close()
+                    transmition_cmplt = True
+                else:
+                    pkg = self.pull()
+                    timeouts = 0
+                    timer.reset()
+            except TimeOutException:
+                timeouts += 1
+                if timeouts >= MAX_TIMEOUTS:
+                    raise AbortedException
+
         self.printer.print_upload_finished(name)
 
     def do_download(self, request):
 
-        print('S&W download')
+        self.printer._print('S&W download')
         name = request.header.name
         path = self.fmanager.SERVER_BASE_PATH + name
         self.in_use_file_path = path
@@ -100,6 +120,8 @@ class Connection_instance:
 
             bytes_sent += len(payload)
             seqnum += 1
+            self.printer.conn_stats(self.socket, bytes_sent, size)
+
         self.fmanager.close_file(path)
         self.printer.print_download_finished(name)
 
@@ -108,6 +130,9 @@ class Connection_instance:
 
     def close(self):
         self.running = False
+        self.socket.close()
+        if self.in_use_file_path:
+            self.fmanager.close_file(self.in_use_file_path)
 
     def __reconstruct_file(self, package, server_file_path):
         written = self.fmanager.write(server_file_path, package.payload, 'wb')

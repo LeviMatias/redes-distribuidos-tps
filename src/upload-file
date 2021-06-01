@@ -14,8 +14,7 @@ if __name__ == "__main__":
 
     if not help:
         #client = Client_udp(host, port, FileManager(), printer)
-        #client.upload(path, name)
         client = Client_udp_gbn(host, port, FileManager(), printer)
-        client.do_upload(path, name)
+        client.upload(path, name)
         
 

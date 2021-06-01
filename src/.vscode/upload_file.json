@@ -10,8 +10,8 @@
             "args": [
                 "-H", "localhost",
                 "-p", "9000",
-                "-d", "${workspaceFolder}/lib/files-client/test1.txt",
-                "-n", "namesv1.txt ",
+                "-d", "${workspaceFolder}/lib/files-client/test2.mp4",
+                "-n", "server2.mp4 ",
                 "-v"
             ]
         }

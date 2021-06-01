@@ -3,15 +3,15 @@
     "configurations": [
         {
             "cwd": "${workspaceFolder}",
-            "name": "upload_file",
+            "name": "download_file",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/upload-file",
+            "program": "${workspaceFolder}/download-file",
             "args": [
                 "-H", "localhost",
                 "-p", "9000",
-                "-d", "${workspaceFolder}/lib/files-client/test1.txt",
-                "-n", "namesv1.txt ",
+                "-d", "${workspaceFolder}/lib/files-client/cl2.mp4",
+                "-n", "server2.mp4",
                 "-v"
             ]
         }

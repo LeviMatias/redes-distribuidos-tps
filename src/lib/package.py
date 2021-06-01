@@ -1,4 +1,4 @@
-from lib.exceptions import AbortedException
+from lib.exceptions import ConnectionInterrupt
 
 SEPARATOR = "|"
 SEPARATOR_ASCII = 124
@@ -88,4 +88,4 @@ class AbortPackage(Package):
         pass
 
     def validate(self):
-        raise AbortedException()
+        raise ConnectionInterrupt()

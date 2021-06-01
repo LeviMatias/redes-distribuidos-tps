@@ -104,6 +104,8 @@ class ArgParser:
                 file_path = argv[i+1]
             if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
+
+        printer.printed.append(' '.join(argv))
         return help, addr, port, file_path, file_name, printer
 
     @staticmethod
@@ -129,6 +131,8 @@ class ArgParser:
                 port = int(argv[i+1])
             if arg == '-s' or arg == '--src':
                 dir_path = argv[i+1]
+
+        printer.printed.append(' '.join(argv))
         return help, addr, port, dir_path, printer
 
     @staticmethod
