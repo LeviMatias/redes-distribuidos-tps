@@ -9,7 +9,7 @@ CHUNK_SIZE = 1024
 PAYLOAD_SIZE = 1024
 
 CONNECTION_TIMEOUT = 0.5
-MAX_TIMEOUTS = 3
+MAX_TIMEOUTS = 10
 
 
 class socket_udp (metaclass=abc.ABCMeta):
@@ -107,7 +107,6 @@ class socket_udp (metaclass=abc.ABCMeta):
         if timed_out and self.timeouts < MAX_TIMEOUTS:  # permissible timeout
             self.timeouts = self.timeouts + 1
             self._reset_timer()
-            print("timed_out!")
             self.t_timeouts += 1
             raise TimeOutException()
         elif timed_out and not self.always_open:  # reached timeout limit

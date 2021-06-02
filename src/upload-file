@@ -16,6 +16,6 @@ if __name__ == "__main__":
             client = Client_udp(host, port, FileManager(), printer)
             client.upload(path, name)
         except ConnectionResetError:
-            print("Could not find a server running at the provided address")
+            print("Remote connection forcibly closed by remote host!")
             
 

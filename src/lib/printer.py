@@ -50,9 +50,13 @@ class QuietPrinter:
         self._print("Upload of "+filename+" finished")
 
     def print_connection_lost(self, addr):
-        self._print("Connection "+addr[0]+":"+str(addr[1])+" lost: no answer")
+        self._print("Connection "+addr[0]+":"+str(addr[1]) +
+                    " lost: no answer - too many timeouts")
 
     def print_duration(self, duration):
+        pass
+
+    def print_timeout():
         pass
 
 
@@ -77,6 +81,9 @@ class DefaultPrinter(QuietPrinter):
 
 
 class VerbosePrinter(DefaultPrinter):
+
+    def print_timeout(self):
+        self._print("timeout!")
 
     def print_bytes_sent(self, b):
         self._print("Bytes sent: " + str(b))

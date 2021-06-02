@@ -1,6 +1,5 @@
 # TP - UDP - INTRODUCCION A REDES Y SISTEMAS DISTRIBUIDOS
 ---
-
 modo de uso del TP
 
 **Server**
@@ -42,3 +41,7 @@ ejemplo de uso
  python upload-file -H localhost -p 9000 -d ./lib/files-client/namesv1.txt -n test2.txt -v
 ```
 ---
+
+detalles:
+* se configuro el TP con 10 timeouts de 0.5 secs, esto quiere decir que luego de pasados 5.5 segunds y 10 ciclos de reintento,
+el programa aborta asumiendo que el destino esta offline o fuera de alcance
