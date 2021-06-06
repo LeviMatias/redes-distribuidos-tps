@@ -14,9 +14,9 @@ if __name__ == "__main__":
     if not help:
         try:
             if gbn:
-                client = Client_udp(host, port, FileManager(), pr)
-            else:
                 client = Client_udp_gbn(host, port, FileManager(), pr)
+            else:
+                client = Client_udp(host, port, FileManager(), pr)
             client.upload(path, name)
         except ConnectionResetError:
             print("Remote connection forcibly closed by remote host!")

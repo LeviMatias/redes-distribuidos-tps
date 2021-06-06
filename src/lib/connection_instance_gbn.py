@@ -81,13 +81,10 @@ class Connection_instance_gbn(Connection_instance):
         for pkg in unkacked:
             self.socket.send(pkg, self.address)
 
-    def do_download(self, request):
+    def do_download(self, request, path, name):
 
         self.printer._print('GBN download')
 
-        name = request.header.name
-        path = self.fmanager.SERVER_BASE_PATH + name
-        self.in_use_file_path = path
         fsize = self.fmanager.get_size(path)
 
         timer = Timer(CONNECTION_TIMEOUT)

@@ -13,9 +13,31 @@ test_4
 OK
 
 test_5
+OK
+falta mirar el S&W porque decia mal los bytes sent (era de mas)
+falta ver porque con mucho packet loss (30%) se cortaba el client
+
+test_6
 FAILED
-el print esta dicendo de mas
-el archivo tarda mucho
+no anduvo ni siquiera sin packet loss
+no tira error pero se corta la conexion
+el client dice tener alrededor de 80 timeouts?!
+
+test_7
+OK
+
+test_8
+OK?
+lo transfirio correctamente pero no se a donde
+
+test_9
+OK
+
+test_10
+OK
+
+test_11
+OK
 
 
 test_21

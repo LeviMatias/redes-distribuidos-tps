@@ -116,6 +116,8 @@ class ArgParser:
                 file_name = argv[i+1]
             if arg == '-gbn':
                 gbn = True
+
+        printer.printed.append(' '.join(argv))
         return help, addr, port, file_path, file_name, printer, gbn
 
     @staticmethod
@@ -144,6 +146,8 @@ class ArgParser:
                 dir_path = ArgParser.parse_path(argv[i+1])
             if arg == '-gbn':
                 gbn = True
+
+        printer.printed.append(' '.join(argv))
         return help, addr, port, dir_path, printer, gbn
 
     @staticmethod
@@ -151,7 +155,7 @@ class ArgParser:
 
         cmd_description = '''
         server command for providing data transfer of certain
-         file path or name to a host address toghether with its port number
+         file path or name to a host address together with its port number
          '''
 
         print(f'''
@@ -169,7 +173,7 @@ class ArgParser:
     def print_download_help():
 
         cmd_description = '''client command for downloading certain
-         file path or name to a host address toghether with its port number
+         file path or name to a host address together with its port number
          '''
 
         print(f'''
@@ -188,7 +192,7 @@ class ArgParser:
     def print_upload_help():
 
         cmd_description = '''client command for uploading certain
-         file path or name to a host address toghether with its port number
+         file path or name to a host address together with its port number
          '''
 
         print(f'''
