@@ -44,29 +44,31 @@ class Connection_instance:
             first = self.pull()
             ptype = first.header.req
 
+            name = first.header.name
+            path = self.fmanager.SERVER_BASE_PATH + name
+            self.in_use_file_path = path
+
             self.printer.print_begin_transfer(first.header.name)
             if ptype == UPLOAD:
-                self.do_upload(first)
+                self.do_upload(first, path, name)
             elif ptype == DOWNLOAD:
-                self.do_download(first)
+                self.do_download(first, path, name)
 
+        except FileNotFoundError:
+            self.printer.print_file_not_found(path)
         except AbortedException:
             aborted = True
+        finally:
             if self.in_use_file_path:
                 self.fmanager.close_file(self.in_use_file_path)
             self.printer.print_connection_lost(self.address)
+            if not aborted:
+                self.printer.print_connection_finished(self.address)
+            self.printer.print_connection_stats(self.socket)
+            self.printer.print_duration(time.time() - start)
+            self.__close()
 
-        if not aborted:
-            self.printer.print_connection_finished(self.address)
-        self.printer.print_connection_stats(self.socket)
-        self.printer.print_duration(time.time() - start)
-        self.__close()
-
-    def do_upload(self, firts_pckg):
-
-        name = firts_pckg.header.name
-        path = self.fmanager.SERVER_BASE_PATH + name
-        self.in_use_file_path = path
+    def do_upload(self, firts_pckg, path, name):
 
         last_recv_seqnum = -1
         package = firts_pckg
@@ -74,23 +76,16 @@ class Connection_instance:
         while self.running and not transmition_complt:
 
             if package.header.seqnum == last_recv_seqnum + 1:
-                finished = self.__reconstruct_file(package, path)
+                transmition_complt = self.__reconstruct_file(package, path)
                 last_recv_seqnum += 1
 
             self.socket.send_ack(last_recv_seqnum, self.address)
 
-            if finished:
-                self.fmanager.close_file(path)
-                self.__close()
-                transmition_complt = True
-            else:
+            if not transmition_complt:
                 package = self.pull()
 
-    def do_download(self, request):
+    def do_download(self, request, path, name):
 
-        name = request.header.name
-        path = self.fmanager.SERVER_BASE_PATH + name
-        self.in_use_file_path = path
         filesz = self.fmanager.get_size(path)
         seqnum = request.header.seqnum
         bytes_sent = 0
@@ -104,7 +99,6 @@ class Connection_instance:
 
             bytes_sent += len(payload)
             seqnum += 1
-        self.fmanager.close_file(path)
 
     def is_active(self):
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
