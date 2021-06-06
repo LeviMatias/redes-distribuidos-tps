@@ -43,5 +43,5 @@ ejemplo de uso
 ---
 
 detalles:
-* se configuro el TP con 10 timeouts de 0.5 secs, esto quiere decir que luego de pasados 5.5 segunds y 10 ciclos de reintento,
+* se configuro el TP con 10 timeouts de 0.25 secs, esto quiere decir que luego de pasados 5.25 segunds y 20 ciclos de reintento,
 el programa aborta asumiendo que el destino esta offline o fuera de alcance

@@ -4,6 +4,15 @@ from lib.printer import QuietPrinter, DefaultPrinter, VerbosePrinter
 class ArgParser:
 
     @staticmethod
+    def parse_path(path):
+        if (path[-1] == '/' or path[-1] == '\\'):
+            return path
+        if (path[0] == '.'):
+            return path + path[1]
+
+        return path + path[0]
+
+    @staticmethod
     def check_client_side_args(argv):
 
         '''
@@ -83,6 +92,7 @@ class ArgParser:
         port = None
         file_path = None
         file_name = None
+        gbn = False
         printer = DefaultPrinter()
 
         for i, arg in enumerate(argv):
@@ -104,7 +114,9 @@ class ArgParser:
                 file_path = argv[i+1]
             if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
-        return help, addr, port, file_path, file_name, printer
+            if arg == '-gbn':
+                gbn = True
+        return help, addr, port, file_path, file_name, printer, gbn
 
     @staticmethod
     def parse_server_side(argv):
@@ -113,6 +125,7 @@ class ArgParser:
         addr = None
         port = None
         dir_path = None
+        gbn = False
         printer = DefaultPrinter()
 
         for i, arg in enumerate(argv):
@@ -128,8 +141,10 @@ class ArgParser:
             if arg == '-p' or arg == '--port':
                 port = int(argv[i+1])
             if arg == '-s' or arg == '--src':
-                dir_path = argv[i+1]
-        return help, addr, port, dir_path, printer
+                dir_path = ArgParser.parse_path(argv[i+1])
+            if arg == '-gbn':
+                gbn = True
+        return help, addr, port, dir_path, printer, gbn
 
     @staticmethod
     def print_server_help():
@@ -175,7 +190,7 @@ class ArgParser:
         cmd_description = '''client command for uploading certain
          file path or name to a host address toghether with its port number
          '''
-         
+
         print(f'''
         {cmd_description}
             optional arguments :

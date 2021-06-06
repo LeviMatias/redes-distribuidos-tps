@@ -7,10 +7,10 @@ if __name__ == "__main__":
 
     ArgParser.check_server_side_args(sys.argv)
 
-    help, host, port, dir_path, printer = ArgParser.parse_server_side(sys.argv)
+    help, host, port, dir_path, pr, gbn = ArgParser.parse_server_side(sys.argv)
 
     if not help:
-        server = Server_udp(host, port, dir_path, printer)
+        server = Server_udp(host, port, dir_path, pr, gbn)
         server.run()
 
 

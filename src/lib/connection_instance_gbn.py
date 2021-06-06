@@ -1,16 +1,19 @@
 from threading import Thread
-from lib.client_udp import Client_udp
-from lib.socket_udp import CHUNK_SIZE, CONNECTION_TIMEOUT, MAX_TIMEOUTS
-from lib.package import Package, Header, UPLOAD
+from lib.connection_instance import Connection_instance
 from lib.timer import Timer
-from lib.exceptions import TimeOutException, AbortedException
+from lib.exceptions import TimeOutException
 from lib.common import W_SIZE
+from lib.package import Package, Header
+from lib.package import DOWNLOAD
+from lib.exceptions import AbortedException, ConnectionInterrupt
+from lib.socket_udp import CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.socket_udp import CHUNK_SIZE
 
 
-class Client_udp_gbn(Client_udp):
+class Connection_instance_gbn(Connection_instance):
 
-    def __init__(self, address, port, fmanager, printer):
-        super().__init__(address, port, fmanager, printer)
+    def __init__(self, address, fmanager, printer):
+        super().__init__(address, fmanager, printer)
 
         self.window_base = 0
         self.last_sent_seqnum = -1
@@ -23,11 +26,10 @@ class Client_udp_gbn(Client_udp):
     def window_full(self):
         return (self.seqnum_head - self.window_base) == W_SIZE
 
-    def fill_sending_queue(self, path, name):
+    def fill_sending_queue(self, path, name, filesz):
 
-        filesz = self.fmanager.get_size(path)
         while not self.window_full() and not self.file_finished:
-            header = Header(self.seqnum_head, UPLOAD, path, name, filesz)
+            header = Header(self.seqnum_head, DOWNLOAD, path, name, filesz)
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
 
@@ -51,18 +53,21 @@ class Client_udp_gbn(Client_udp):
         self.last_sent_seqnum += amount_sent
 
     def recv_acks(self, timer):
-        while self.running:
-            pkg, _ = self.socket.blocking_recv()
+        try:
+            while self.running:
+                pkg = self.socket.blocking_recv_through(self.pckg_queue)
 
-            if not pkg:
-                break
+                if not pkg:
+                    break
 
-            if pkg.is_ack():
-                ack_seqnum = pkg.header.seqnum
-                self.update_sent_acked_stats(ack_seqnum)
-                self.socket.update_recv_stats(pkg)
-                self.window_base = ack_seqnum
-                timer.reset()
+                if pkg.is_ack():
+                    ack_seqnum = pkg.header.seqnum
+                    self.update_sent_acked_stats(ack_seqnum)
+                    self.socket.update_recv_stats(pkg)
+                    self.window_base = ack_seqnum
+                    timer.reset()
+        except (AbortedException, ConnectionInterrupt):
+            self.running = False
 
     def update_sent_acked_stats(self, ack_seqnum_recvd):
 
@@ -76,9 +81,12 @@ class Client_udp_gbn(Client_udp):
         for pkg in unkacked:
             self.socket.send(pkg, self.address)
 
-    def do_upload(self, path, name):
+    def do_download(self, request):
 
-        self.printer._print('GBN upload')
+        self.printer._print('GBN download')
+        name = request.header.name
+        path = self.fmanager.SERVER_BASE_PATH + name
+        self.in_use_file_path = path
         fsize = self.fmanager.get_size(path)
 
         timer = Timer(CONNECTION_TIMEOUT)
@@ -93,7 +101,7 @@ class Client_udp_gbn(Client_udp):
         while not transfer_cmplt and self.running:
             try:
                 timer.update()
-                self.fill_sending_queue(path, name)
+                self.fill_sending_queue(path, name, fsize)
                 self.send_queued_unsent()
 
                 self.printer.conn_stats(self.socket, self.b_sent, fsize)
@@ -117,9 +125,9 @@ class Client_udp_gbn(Client_udp):
         timer.stop()
 
         self.printer.conn_stats(self.socket, self.b_sent, fsize)
-        self.printer.print_upload_finished(name)
+        self.printer.print_download_finished(name)
 
     def close(self):
-        super(Client_udp_gbn, self).close()
+        super(Connection_instance_gbn, self).close()
         if self.acks_listener:
             self.acks_listener.join()

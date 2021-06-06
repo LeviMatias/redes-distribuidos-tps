@@ -72,7 +72,8 @@ class Client_udp:
 
             finished, written = self.__reconstruct_file(package, path)
 
-        self.socket.send_ack(last_recv_seqnum, self.address)
+        for _ in range(0, 3):
+            self.socket.send_ack(last_recv_seqnum, self.address)
         self.printer.print_download_finished(name)
 
     def __reconstruct_file(self, package, path):

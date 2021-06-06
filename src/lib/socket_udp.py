@@ -5,11 +5,10 @@ import time
 import abc
 # import random
 
-CHUNK_SIZE = 1024
-PAYLOAD_SIZE = 1024
+CHUNK_SIZE = 5024
 
-CONNECTION_TIMEOUT = 0.5
-MAX_TIMEOUTS = 10
+CONNECTION_TIMEOUT = 0.25
+MAX_TIMEOUTS = 20
 
 
 class socket_udp (metaclass=abc.ABCMeta):
@@ -29,6 +28,7 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.client = False
         self.socket.setblocking(False)
         self.t_timeouts = 0
+        self.running = True
 
     def _recv(self):
         try:
@@ -60,7 +60,7 @@ class socket_udp (metaclass=abc.ABCMeta):
     def blocking_recv(self):
 
         package_recvd = False
-        while not package_recvd:
+        while not package_recvd and self.running:
             recv_bytestream, address = self._recv()
 
             if recv_bytestream:
@@ -128,9 +128,9 @@ class client_socket_udp (socket_udp):
 
     def reliable_send_and_recv(self, package, address, package_queue=None):
         recv_package = None
-        sent = self.send(package, address)
         while not recv_package:
             try:
+                sent = self.send(package, address)
                 recv_package, _ = self.recv_with_timer(package_queue)
                 self.t_bytes_sent_ok += sent
                 return recv_package
