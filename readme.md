@@ -20,7 +20,7 @@ python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
 **Client**
 
 ```
-python (upload-file | download-file)  [-h] [-v | -q] -H ADDR -p PORT -d FILEPATH -n FILENAME
+python (upload-file | download-file)  [-h] [-v | -q] -H ADDR -p PORT [-s | -d] FILEPATH -n FILENAME
 ```
 donde ADDR, PORT es la address y port del server
 -h, -v y -q son parametros opcionales, help, verbose y quiet respectivamente
@@ -38,7 +38,7 @@ ejemplo de uso
 ```
  python download-file -H localhost -p 9000 -d ./lib/files-client/test1.txt -n namesv1.txt -v
 
- python upload-file -H localhost -p 9000 -d ./lib/files-client/namesv1.txt -n test2.txt -v
+ python upload-file -H localhost -p 9000 -s ./lib/files-client/namesv1.txt -n test2.txt -v
 ```
 ---
 
