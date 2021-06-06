@@ -79,6 +79,7 @@ class Client_udp_gbn(Client_udp):
     def do_upload(self, path, name):
 
         self.printer._print('GBN upload')
+
         fsize = self.fmanager.get_size(path)
 
         timer = Timer(CONNECTION_TIMEOUT)

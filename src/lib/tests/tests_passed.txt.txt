@@ -12,6 +12,11 @@ OK
 test_4
 OK
 
+test_5
+FAILED
+el print esta dicendo de mas
+el archivo tarda mucho
+
 
 test_21
 OK

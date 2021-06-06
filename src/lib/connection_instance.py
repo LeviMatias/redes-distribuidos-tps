@@ -68,6 +68,8 @@ class Connection_instance:
 
     def do_upload(self, firts_pckg, path, name):
 
+        self.printer._print('S&W and GBN upload')
+
         last_recv_seqnum = -1
         package = firts_pckg
         filesz = package.header.filesz
@@ -88,6 +90,8 @@ class Connection_instance:
                     self.socket.send_ack(last_recv_seqnum, self.address)
 
     def do_download(self, request, path, name):
+
+        self.printer._print('S&W download')
 
         filesz = self.fmanager.get_size(path)
         seqnum = request.header.seqnum

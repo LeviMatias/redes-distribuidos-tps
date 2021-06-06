@@ -37,6 +37,8 @@ class Client_udp:
 
     def do_upload(self, path, name):
 
+        self.printer._print('S&W upload')
+
         filesz = self.fmanager.get_size(path)
         seqnum = 0
         sent = 0
@@ -56,6 +58,9 @@ class Client_udp:
         self.printer.print_upload_finished(name)
 
     def do_download(self, path, name):
+
+        self.printer._print('S&W and GBN download')
+
         last_recv_seqnum = -1
 
         req_pkg = Package.create_download_request(name)

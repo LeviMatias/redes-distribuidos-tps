@@ -84,6 +84,7 @@ class Connection_instance_gbn(Connection_instance):
     def do_download(self, request):
 
         self.printer._print('GBN download')
+
         name = request.header.name
         path = self.fmanager.SERVER_BASE_PATH + name
         self.in_use_file_path = path
