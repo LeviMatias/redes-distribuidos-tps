@@ -6,6 +6,9 @@ class QuietPrinter:
         print(msg)
         print()
 
+    def print_program_closed(self):
+        self._print('Exited')
+
     def print_connection_aborted(self, printStackTrace=False):
         self._print('An error ocurred. Connection closed')
         if printStackTrace:

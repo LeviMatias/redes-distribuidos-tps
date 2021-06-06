@@ -33,7 +33,7 @@ class socket_udp (metaclass=abc.ABCMeta):
     def _recv(self):
         try:
             return self.socket.recvfrom(CHUNK_SIZE)
-        except BlockingIOError:
+        except (BlockingIOError, OSError):
             return None, None
 
     def reliable_send(self, package, address, package_queue=None):
@@ -113,6 +113,10 @@ class socket_udp (metaclass=abc.ABCMeta):
             raise AbortedException()  # connection assumed lost
 
         return True
+
+    def close(self):
+        self.running = False
+        self.socket.close()
 
 
 class client_socket_udp (socket_udp):

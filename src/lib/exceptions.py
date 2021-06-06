@@ -4,3 +4,6 @@ class TimeOutException(Exception):
 
 class AbortedException(Exception):
     pass
+
+class ConnectionInterrupt(Exception):
+    pass

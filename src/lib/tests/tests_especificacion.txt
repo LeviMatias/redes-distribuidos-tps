@@ -111,4 +111,9 @@ dos clientes haciendo download del mismo binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp4 -n s6.mp4 -v
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp4 -n s6.mp4 -v
-
+	
+test_21
+se puede cerrar el server en cualquier momento con la q
+	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
+	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s8.mp4 -v
+	<cerrar sever con la q>
