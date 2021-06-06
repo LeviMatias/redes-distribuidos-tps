@@ -23,12 +23,15 @@ class Client_udp:
         try:
             self.printer.print_begin_transfer(name)
             protocol(path, name)
+        except FileNotFoundError:
+            self.printer.print_file_not_found(path)
         except AbortedException:
-            self.fmanager.close_file(path)
             self.printer.print_connection_lost(self.address)
-        self.printer.print_connection_finished(self.address)
-        self.printer.print_duration(time.time() - start)
-        self.printer.print_connection_stats(self.socket)
+        finally:
+            self.fmanager.close_file(path)
+            self.printer.print_connection_finished(self.address)
+            self.printer.print_duration(time.time() - start)
+            self.printer.print_connection_stats(self.socket)
 
     def do_upload(self, path, name):
 
@@ -48,7 +51,6 @@ class Client_udp:
             sent += len(payload)
             seqnum += 1
 
-        self.fmanager.close_file(path)
         self.printer.print_upload_finished(name)
 
     def do_download(self, path, name):
@@ -69,9 +71,6 @@ class Client_udp:
             last_recv_seqnum += 1
 
             finished, written = self.__reconstruct_file(package, path)
-
-            if finished:
-                self.fmanager.close_file(path)
 
         self.socket.send_ack(last_recv_seqnum, self.address)
         self.printer.print_download_finished(name)

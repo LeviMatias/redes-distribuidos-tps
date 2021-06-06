@@ -11,10 +11,11 @@ class QuietPrinter:
         if printStackTrace:
             traceback.print_exc()
 
-    def print_file_not_found(self, path=None):
+    def print_file_not_found(self, path=None, printStackTrace=False):
         if path:
             self._print('File not found at: ' + path)
-        traceback.print_exc()
+        if printStackTrace:
+            traceback.print_exc()
 
     def print_connection_established(self, addr):
         pass

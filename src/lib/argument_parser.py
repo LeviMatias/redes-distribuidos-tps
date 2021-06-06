@@ -14,7 +14,7 @@ class ArgParser:
             [-v | -q]
             [-H ADDR ]
             [-p PORT ]
-            [-d FILEPATH ]
+            [-d or -s FILEPATH ]
             [-n FILENAME ]
         '''
 
@@ -32,7 +32,7 @@ class ArgParser:
                 found_addr = True
             if arg == '-p' or arg == '--port':
                 found_port = True
-            if arg == '-d' or arg == "--dst":
+            if arg == '-s' or arg == "--src" or arg == '-d' or arg == "--dst":
                 found_file_path = True
             if arg == '-n' or arg == "--name":
                 found_file_name = True
@@ -68,7 +68,7 @@ class ArgParser:
                 found_addr = True
             if arg == '-p' or arg == '--port':
                 found_port = True
-            if arg == '-s' or arg == '--src':
+            if arg == '-s' or arg == '--storage':
                 found_dir_path = True
 
         assert found_addr, 'missing host address'
@@ -100,7 +100,7 @@ class ArgParser:
                 addr = argv[i+1]
             if arg == '-p' or arg == '--port':
                 port = int(argv[i+1])
-            if arg == '-d' or arg == "--dst":
+            if arg == '-d' or arg == "--dst" or arg == '-s' or arg == "--src":
                 file_path = argv[i+1]
             if arg == '-n' or arg == "--name":
                 file_name = argv[i+1]
