@@ -1,5 +1,6 @@
 .idea
 setting.json
+/src/lib/tests/tests_resultados_fotos
 /src/lib/files-client/test2.mp4
 .vscode/launch.json
 src/lib/__pycache__/__init__.cpython-38.pyc

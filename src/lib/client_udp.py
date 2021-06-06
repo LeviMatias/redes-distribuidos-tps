@@ -46,10 +46,10 @@ class Client_udp:
             package = Package(header, payload)
 
             self.socket.reliable_send(package, self.address)
-            self.printer.progressBar(sent, filesz)
 
             sent += len(payload)
             seqnum += 1
+            self.printer.progressBar(sent, filesz)
 
         self.printer.print_upload_finished(name)
 
