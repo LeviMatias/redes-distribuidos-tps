@@ -1,24 +1,34 @@
 import traceback
+import time
+import os
 
 
 class QuietPrinter:
-    def _print(self, msg):
-        print(msg)
-        print()
 
-    def print_program_closed(self):
-        self._print('Exited')
+    def __init__(self):
+        self.printed = []
 
-    def print_connection_aborted(self, printStackTrace=False):
-        self._print('An error ocurred. Connection closed')
-        if printStackTrace:
-            traceback.print_exc()
+    def _print(self, msg, store_msg=True):
+        print(msg+'\n')
+        if store_msg:
+            self.printed.append(msg)
 
     def print_file_not_found(self, path=None, printStackTrace=False):
         if path:
             self._print('File not found at: ' + path)
         if printStackTrace:
             traceback.print_exc()
+
+    def print_connection_lost(self, addr):
+        self._print("Connection "+addr[0]+":"+str(addr[1]))
+
+    def print_connection_aborted(self, printStackTrace=False):
+        self._print('An error ocurred. Connection closed')
+        if printStackTrace:
+            traceback.print_exc()
+
+    def print_program_closed(self):
+        self._print('Exited')
 
     def print_connection_established(self, addr):
         pass
@@ -29,23 +39,21 @@ class QuietPrinter:
     def print_listening_on(self, addr):
         pass
 
-    def progressBar(self, current, total, barLength=20):
-        pass
-
-    def print_bytes_sent(self, b):
-        pass
-
-    def print_bytes_recv(self, b):
-        pass
-
-    def print_time_elapsed(self, time_in_seconds):
-        pass
-
-    def print_connection_stats(self, sock_stats):
-        pass
-
     def print_begin_transfer(self, filename):
         pass
+
+    def print_duration(self, duration):
+        pass
+
+    def conn_stats(self, sock_stats, progress, filesz):
+
+        barLength = 20
+        ratio = float(progress) / filesz
+        percent = round(ratio * 100, 1)
+        arrow = '-' * int(round(ratio * barLength, 0)) + '>'
+        spaces = ' ' * (barLength - len(arrow))
+
+        print(f'Progress: [{arrow}{spaces}] {percent}%', end='\r')
 
     def print_download_finished(self, filename):
         self._print("Download of "+filename+" finished")
@@ -53,15 +61,12 @@ class QuietPrinter:
     def print_upload_finished(self, filename):
         self._print("Upload of "+filename+" finished")
 
-    def print_connection_lost(self, addr):
-        self._print("Connection "+addr[0]+":"+str(addr[1]) +
-                    " lost: no answer - too many timeouts")
+    def _clear_screen(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-    def print_duration(self, duration):
-        pass
-
-    def print_timeout():
-        pass
+    def _reprint_prev_prints(self):
+        for msg in self.printed:
+            self._print(msg, store_msg=False)
 
 
 class DefaultPrinter(QuietPrinter):
@@ -86,38 +91,56 @@ class DefaultPrinter(QuietPrinter):
 
 class VerbosePrinter(DefaultPrinter):
 
-    def print_timeout(self):
-        self._print("timeout!")
+    def print_progress(self, sock_stats, progress, filesz):
 
-    def print_bytes_sent(self, b):
-        self._print("Bytes sent: " + str(b))
+        barLength = 20
 
-    def print_bytes_recv(self, b):
-        self._print("Bytes recv: " + str(b))
+        now = time.time()
 
-    def print_time_elapsed(self, time_in_seconds):
-        self._print("Time elapsed: " + str(time_in_seconds) + " seconds")
-
-    def print_connection_stats(self, sock_stats):
-        self._print(" ______ ")
-        addr = sock_stats.address
-        self._print(" Connection with " + addr + ":" + str(sock_stats.port))
         sent = sock_stats.t_bytes_sent
         sent_ok = sock_stats.t_bytes_sent_ok
-        self._print(" Total bytes sent: " + str(sent))
-        self._print(" Total bytes sent ACK'd: " + str(sent_ok))
-        self._print(" Total bytes recvd: " + str(sock_stats.t_bytes_recv))
-        self._print(" Total times timed out: " + str(sock_stats.t_timeouts))
+        bytes_recvd = sock_stats.t_bytes_recv
 
-        if sent > 0:
-            self._print(" Estimated payload send fail rate: "
-                        + str(round(100 - 100 * sent_ok/sent, 2))+"%")
-        self._print(" ______ ")
+        pkgs_sent = sock_stats.pkg_sent
+        acks_rcvd = sock_stats.acks_recv
+        pkgs_rcvd = sock_stats.pkg_recvd
 
-    def progressBar(self, current, total, barLength=20):
-        ratio = float(current) / total
+        timeouts = sock_stats.t_timeouts
+
+        succ_rate = sent_ok/sent if sent > 0 else 100
+
+        elapsed = now - sock_stats.begin_time
+        remaning = filesz - sent_ok
+        transfer_speed = progress/elapsed if elapsed != 0 else 0
+
+        if transfer_speed != 0:
+            eta = round((remaning/transfer_speed)/60, 2)
+        else:
+            eta = '???'
+
+        ratio = float(progress) / filesz
         percent = round(ratio * 100, 1)
         arrow = '-' * int(round(ratio * barLength, 0)) + '>'
         spaces = ' ' * (barLength - len(arrow))
 
-        print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r')
+        self._clear_screen()
+        self._reprint_prev_prints()
+
+        print(f"""
+            ______
+            bytes sent: {round(sent/1024,2)} KB
+            bytes sent acked: {round(sent_ok/1024,2)} KB
+            bytes recvd: {round(bytes_recvd/1024,2)} KB
+
+            pkgs sent: {pkgs_sent}
+            ACK recvd: {acks_rcvd}
+            pkgs recvd: {pkgs_rcvd}
+
+            Total times timed out: {timeouts}
+
+            Success rate (acked / sent): {round(succ_rate * 100, 2)}% 
+            elapsed: {round(elapsed,1)} secs
+            ETA: {eta} mins
+            Progress: [{arrow}{spaces}] {percent}%
+            ______
+        \n""")

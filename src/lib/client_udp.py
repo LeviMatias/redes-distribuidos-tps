@@ -11,6 +11,8 @@ class Client_udp:
         self.address = (address, port)
         self.fmanager = fmanager
         self.printer = printer
+        self.running = True
+        self.in_use_file_path = None
 
     def upload(self, path, name):
         self._data_transfer(path, name, self.do_upload)
@@ -20,6 +22,7 @@ class Client_udp:
 
     def _data_transfer(self, path, name, protocol):
         start = time.time()
+        self.in_use_file_path = path
         try:
             self.printer.print_begin_transfer(name)
             protocol(path, name)
@@ -28,10 +31,9 @@ class Client_udp:
         except AbortedException:
             self.printer.print_connection_lost(self.address)
         finally:
-            self.fmanager.close_file(path)
+            self.close()
             self.printer.print_connection_finished(self.address)
             self.printer.print_duration(time.time() - start)
-            self.printer.print_connection_stats(self.socket)
 
     def do_upload(self, path, name):
 
@@ -49,7 +51,7 @@ class Client_udp:
 
             sent += len(payload)
             seqnum += 1
-            self.printer.progressBar(sent, filesz)
+            self.printer.print_progress(self.socket, sent, filesz)
 
         self.printer.print_upload_finished(name)
 
@@ -58,6 +60,7 @@ class Client_udp:
 
         req_pkg = Package.create_download_request(name)
         package = self.socket.reliable_send_and_recv(req_pkg, self.address)
+        filesz = package.header.filesz
         last_recv_seqnum += 1
         finished, written = self.__reconstruct_file(package, path)
 
@@ -66,7 +69,7 @@ class Client_udp:
 
         while not finished:
             self.socket.send_ack(last_recv_seqnum, self.address)
-            self.printer.progressBar(written, package.header.filesz)
+            self.printer.print_progress(self.socket, written, filesz)
             package = self.socket.listen_for_next_from(last_recv_seqnum)
             last_recv_seqnum += 1
 
@@ -79,3 +82,9 @@ class Client_udp:
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')
         return written >= package.header.filesz, written
+
+    def close(self):
+        self.running = False
+        self.socket.close()
+        if self.in_use_file_path:
+            self.fmanager.close_file(self.in_use_file_path)

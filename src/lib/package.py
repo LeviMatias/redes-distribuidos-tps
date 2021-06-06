@@ -72,6 +72,9 @@ class Package:
         self.header = header
         self.payload = payload
 
+    def is_ack(self):
+        return self.get_type() == ACK
+
     def get_type(self):
         return self.header.req
 

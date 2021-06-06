@@ -28,7 +28,7 @@ class Connection_instance:
     def pull(self):
         package = self.pckg_queue.get()
         package.validate()
-        self.socket.t_bytes_recv += len(package.payload) + package.header.size
+        self.socket.update_recv_stats(package)
         return package
 
     def start(self):
@@ -63,7 +63,6 @@ class Connection_instance:
         finally:
             if not aborted:
                 self.printer.print_connection_finished(self.address)
-            self.printer.print_connection_stats(self.socket)
             self.printer.print_duration(time.time() - start)
             self.close()
 
@@ -71,16 +70,18 @@ class Connection_instance:
 
         last_recv_seqnum = -1
         package = firts_pckg
-        transmition_complt = False
-        while self.running and not transmition_complt:
+        filesz = package.header.filesz
+        transmt_cmplt = False
+        while self.running and not transmt_cmplt:
 
             if package.header.seqnum == last_recv_seqnum + 1:
-                transmition_complt = self.__reconstruct_file(package, path)
+                transmt_cmplt, written = self.__reconstruct_file(package, path)
                 last_recv_seqnum += 1
 
             self.socket.send_ack(last_recv_seqnum, self.address)
+            self.printer.print_progress(self.socket, written, filesz)
 
-            if not transmition_complt:
+            if not transmt_cmplt:
                 package = self.pull()
             else:
                 for _ in range(0, 3):
@@ -101,6 +102,7 @@ class Connection_instance:
 
             bytes_sent += len(payload)
             seqnum += 1
+            self.printer.print_progress(self.socket, bytes_sent, filesz)
 
     def is_active(self):
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
@@ -109,7 +111,7 @@ class Connection_instance:
 
     def __reconstruct_file(self, package, server_file_path):
         written = self.fmanager.write(server_file_path, package.payload, 'wb')
-        return written >= package.header.filesz
+        return written >= package.header.filesz, written
 
     def close(self):
         self.running = False

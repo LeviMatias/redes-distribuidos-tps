@@ -42,7 +42,6 @@ class Server_udp:
                 self.demux(package, address)
         except ConnectionResetError:
             self.printer.print_connection_lost(self.address)
-        print("Server closed")
 
     def demux(self, package, address):
 

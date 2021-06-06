@@ -96,7 +96,7 @@ class Client_udp_gbn(Client_udp):
                 self.fill_sending_queue(path, name)
                 self.send_queued_unsent()
 
-                self.printer.conn_stats(self.socket, self.b_sent, fsize)
+                self.printer.print_progress(self.socket, self.b_sent, fsize)
 
                 all_acked = self.window_base == self.last_sent_seqnum
                 if self.file_finished and all_acked:
@@ -116,7 +116,7 @@ class Client_udp_gbn(Client_udp):
                     self.send_all_queued()
         timer.stop()
 
-        self.printer.conn_stats(self.socket, self.b_sent, fsize)
+        self.printer.print_progress(self.socket, self.b_sent, fsize)
         self.printer.print_upload_finished(name)
 
     def close(self):
