@@ -1,3 +1,4 @@
+import time
 
 
 class Logger:
@@ -6,7 +7,8 @@ class Logger:
         self.logfile = open(path + 'log.txt', 'w')
 
     def log(self, msg):
-        self.logfile.write(msg+'\n')
+        t = time.time()
+        self.logfile.write(msg+'|'+str(t)+'\n')
 
     def close(self):
         self.logfile.close()

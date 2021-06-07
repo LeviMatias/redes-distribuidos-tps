@@ -3,8 +3,8 @@ from lib.client_udp import Client_udp
 from lib.socket_udp import CHUNK_SIZE, CONNECTION_TIMEOUT, MAX_TIMEOUTS
 from lib.package import Package, Header, UPLOAD
 from lib.timer import Timer
-from lib.exceptions import TimeOutException, AbortedException
-from lib.common import W_SIZE
+from lib.exceptions import GBNTimeOut, TimeOutException, AbortedException
+from lib.common import W_SIZE, GBN_TIMEOUT
 
 
 class Client_udp_gbn(Client_udp):
@@ -21,7 +21,7 @@ class Client_udp_gbn(Client_udp):
         self.acks_listener = None
 
     def window_full(self):
-        return (self.seqnum_head - self.window_base) == W_SIZE
+        return (self.seqnum_head - self.window_base) >= W_SIZE
 
     def fill_sending_queue(self, path, name):
 
@@ -45,24 +45,26 @@ class Client_udp_gbn(Client_udp):
         unsent = self.sendq[self.last_sent_seqnum + 1: self.seqnum_head]
         for pkg in unsent:
             self.socket.send(pkg, self.address)
+            self.logger.log(str(pkg.header.seqnum))
             self.b_sent += len(pkg.payload)
             amount_sent += 1
 
         self.last_sent_seqnum += amount_sent
 
-    def recv_acks(self, timer):
+    def recv_acks(self, timers):
         while self.running:
             pkg, _ = self.socket.blocking_recv()
 
             if not pkg:
                 break
 
-            if pkg.is_ack():
+            if pkg.is_ack() and pkg.header.seqnum > -1:
                 ack_seqnum = pkg.header.seqnum
                 self.update_sent_acked_stats(ack_seqnum)
                 self.socket.update_recv_stats(pkg)
+                self.logger.log("ack" + str(ack_seqnum))
                 self.window_base = ack_seqnum
-                timer.reset()
+                [timer.reset() for timer in timers]
 
     def update_sent_acked_stats(self, ack_seqnum_recvd):
 
@@ -75,6 +77,7 @@ class Client_udp_gbn(Client_udp):
         unkacked = self.sendq[self.window_base: self.seqnum_head]
         for pkg in unkacked:
             self.socket.send(pkg, self.address)
+            self.logger.log(str(pkg.header.seqnum))
 
     def do_upload(self, path, name):
 
@@ -82,18 +85,20 @@ class Client_udp_gbn(Client_udp):
 
         fsize = self.fmanager.get_size(path)
 
-        timer = Timer(CONNECTION_TIMEOUT)
-        self.acks_listener = Thread(args=[timer], target=self.recv_acks)
+        gbn_timer = Timer(GBN_TIMEOUT, GBNTimeOut)
+        connection_timer = Timer(CONNECTION_TIMEOUT, TimeOutException)
+        timers = [gbn_timer, connection_timer]
+
+        self.acks_listener = Thread(args=[timers],
+                                    target=self.recv_acks)
         self.acks_listener.start()
 
-        base_window_at_timeout = self.window_base
         timeouts = 0
-
-        timer.start()
+        [timer.start() for timer in timers]
         transfer_cmplt = False
         while not transfer_cmplt and self.running:
             try:
-                timer.update()
+                [timer.update() for timer in timers]
                 self.fill_sending_queue(path, name)
                 self.send_queued_unsent()
 
@@ -103,19 +108,18 @@ class Client_udp_gbn(Client_udp):
                 if self.file_finished and all_acked:
                     transfer_cmplt = True
 
+            except GBNTimeOut:
+                gbn_timer.reset()
+                self.send_all_queued()
+
             except TimeOutException:
-
-                if base_window_at_timeout == self.window_base:
-                    timeouts += 1
-                else:
-                    base_window_at_timeout = self.window_base
-
+                timeouts += 1
                 if timeouts >= MAX_TIMEOUTS:
-                    raise AbortedException
+                    raise(AbortedException)
                 else:
-                    timer.reset()
-                    self.send_all_queued()
-        timer.stop()
+                    connection_timer.reset()
+
+        [timer.stop() for timer in timers]
 
         self.printer.print_progress(self.socket, self.b_sent, fsize)
         self.printer.print_upload_finished(name)

@@ -78,9 +78,9 @@ class Client_udp:
             self.printer.print_progress(self.socket, written, filesz)
 
         self.socket.send_ack(last_recv_seqnum, self.address)
-        self.logger.log("acked" + str(last_recv_seqnum))
+        self.logger.log("ack" + str(last_recv_seqnum))
 
-        timer = Timer(self.socket.timeout_limit)
+        timer = Timer(self.socket.timeout_limit, TimeOutException)
         while self.running and not trnsmt_cmplt:
             try:
                 timer.start()
@@ -95,7 +95,7 @@ class Client_udp:
                     self.printer.print_progress(self.socket, written, filesz)
 
                 self.socket.send_ack(last_recv_seqnum, self.address)
-                self.logger.log("acked" + str(last_recv_seqnum))
+                self.logger.log("ack" + str(last_recv_seqnum))
 
             except TimeOutException:
                 timeouts += 1
@@ -104,7 +104,7 @@ class Client_udp:
 
         for _ in range(0, 3):
             self.socket.send_ack(last_recv_seqnum, self.address)
-            self.logger.log("acked" + str(last_recv_seqnum))
+            self.logger.log("ack" + str(last_recv_seqnum))
 
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')

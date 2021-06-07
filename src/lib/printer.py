@@ -22,6 +22,9 @@ class QuietPrinter:
     def print_connection_lost(self, addr):
         self._print("Connection "+addr[0]+":"+str(addr[1]))
 
+    def print_connection_interrupted(self, addr):
+        self._print("Connection "+addr[0]+":"+str(addr[1]))
+
     def print_connection_aborted(self, printStackTrace=False):
         self._print('An error ocurred. Connection closed')
         if printStackTrace:
@@ -45,15 +48,8 @@ class QuietPrinter:
     def print_duration(self, duration):
         pass
 
-    def conn_stats(self, sock_stats, progress, filesz):
-
-        barLength = 20
-        ratio = float(progress) / filesz
-        percent = round(ratio * 100, 1)
-        arrow = '-' * int(round(ratio * barLength, 0)) + '>'
-        spaces = ' ' * (barLength - len(arrow))
-
-        print(f'Progress: [{arrow}{spaces}] {percent}%', end='\r')
+    def print_progress(self, sock_stats, progress, filesz):
+        pass
 
     def print_download_finished(self, filename):
         self._print("Download of "+filename+" finished")

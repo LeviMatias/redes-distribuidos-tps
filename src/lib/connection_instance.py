@@ -62,8 +62,10 @@ class Connection_instance:
             self.printer.print_file_not_found(path)
         except (AbortedException, ConnectionResetError):
             self.printer.print_connection_lost(self.address)
+            aborted = True
         except ConnectionInterrupt:
-            pass
+            self.printer.print_connection_interrupted(self.address)
+            aborted = True
         finally:
             if not aborted:
                 self.printer.print_connection_finished(self.address)
@@ -79,7 +81,7 @@ class Connection_instance:
         size = firts_pckg.header.filesz
         finished = False
 
-        timer = Timer(self.socket.timeout_limit)
+        timer = Timer(self.socket.timeout_limit, TimeOutException)
         timeouts = 0
         while self.running and not finished:
             try:
@@ -89,6 +91,7 @@ class Connection_instance:
                     last_recv_seqnum += 1
 
                 self.socket.send_ack(last_recv_seqnum, self.address)
+                self.logger.log("ack" + str(last_recv_seqnum))
 
                 if not finished:
                     timer.start()
@@ -96,6 +99,7 @@ class Connection_instance:
                                                             timer)
                     timer.stop()
                     timeouts = 0
+                    self.logger.log(str(pkg.header.seqnum))
 
             except TimeOutException:
                 timeouts += 1

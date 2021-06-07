@@ -1,8 +1,7 @@
 import time
 from threading import Thread
 from lib.file_manager import FileManager
-from lib.package import AbortPackage
-from lib.socket_udp import CONNECTION_TIMEOUT
+from lib.package import AbortPackage, InterruptPackage
 from lib.socket_udp import server_socket_udp
 from lib.connection_instance import Connection_instance
 from lib.common import EXIT
@@ -79,7 +78,7 @@ class Server_udp:
 
     def _periodic_clean(self):
         while self.running:
-            time.sleep(CONNECTION_TIMEOUT)
+            time.sleep(0.1)
             abortpckg = AbortPackage()
 
             self.active_connections = {addr: c for addr, c
@@ -90,7 +89,7 @@ class Server_udp:
     def close(self):
         self.running = False
         for addr, connection in self.active_connections.items():
-            connection.push(AbortPackage())
+            connection.push(InterruptPackage())
             connection.join()
 
         self.socket.close()
