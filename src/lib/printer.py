@@ -105,12 +105,8 @@ class VerbosePrinter(DefaultPrinter):
         acks_rcvd = sock_stats.acks_recv
         pkgs_rcvd = sock_stats.pkg_recvd
 
-        timeouts = sock_stats.t_timeouts
-
-        succ_rate = sent_ok/sent if sent > 0 else 100
-
         elapsed = now - sock_stats.begin_time
-        remaning = filesz - sent_ok
+        remaning = filesz - progress
         transfer_speed = progress/elapsed if elapsed != 0 else 0
 
         if transfer_speed != 0:
@@ -122,6 +118,8 @@ class VerbosePrinter(DefaultPrinter):
         percent = round(ratio * 100, 1)
         arrow = '-' * int(round(ratio * barLength, 0)) + '>'
         spaces = ' ' * (barLength - len(arrow))
+
+        # return
 
         self._clear_screen()
         self._reprint_prev_prints()
@@ -136,10 +134,7 @@ class VerbosePrinter(DefaultPrinter):
             ACK recvd: {acks_rcvd}
             pkgs recvd: {pkgs_rcvd}
 
-            Total times timed out: {timeouts}
-
-            Success rate (acked / sent): {round(succ_rate * 100, 2)}% 
-            elapsed: {round(elapsed,1)} secs
+            elapsed: {round(elapsed, 1)} secs
             ETA: {eta} mins
             Progress: [{arrow}{spaces}] {percent}%
             ______

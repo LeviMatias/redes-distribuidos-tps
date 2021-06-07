@@ -49,6 +49,7 @@ class Connection_instance_gbn(Connection_instance):
             self.socket.send(pkg, self.address)
             self.b_sent += len(pkg.payload)
             amount_sent += 1
+            self.logger.log(str(pkg.header.seqnum))
 
         self.last_sent_seqnum += amount_sent
 
@@ -66,6 +67,7 @@ class Connection_instance_gbn(Connection_instance):
                     self.socket.update_recv_stats(pkg)
                     self.window_base = ack_seqnum
                     timer.reset()
+                    self.logger.log("recvd ack" + str(ack_seqnum))
         except (AbortedException, ConnectionInterrupt):
             self.running = False
 
@@ -80,6 +82,7 @@ class Connection_instance_gbn(Connection_instance):
         unkacked = self.sendq[self.window_base: self.seqnum_head]
         for pkg in unkacked:
             self.socket.send(pkg, self.address)
+            self.logger.log(str(pkg.header.seqnum))
 
     def do_download(self, request, path, name):
 

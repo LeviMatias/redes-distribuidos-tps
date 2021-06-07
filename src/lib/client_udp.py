@@ -1,6 +1,8 @@
 from lib.package import Package, Header, UPLOAD
-from lib.exceptions import AbortedException
-from lib.socket_udp import client_socket_udp, CHUNK_SIZE
+from lib.exceptions import AbortedException, TimeOutException
+from lib.socket_udp import client_socket_udp, CHUNK_SIZE, MAX_TIMEOUTS
+from lib.logger import Logger
+from lib.timer import Timer
 import time
 
 
@@ -10,6 +12,7 @@ class Client_udp:
         self.socket = client_socket_udp(address, port)
         self.address = (address, port)
         self.fmanager = fmanager
+        self.logger = Logger('./lib/files-client/')
         self.printer = printer
         self.running = True
         self.in_use_file_path = None
@@ -60,35 +63,55 @@ class Client_udp:
     def do_download(self, path, name):
 
         self.printer._print('S&W and GBN download')
-
         last_recv_seqnum = -1
+        trnsmt_cmplt = False
 
         req_pkg = Package.create_download_request(name)
-        package = self.socket.reliable_send_and_recv(req_pkg, self.address)
-        filesz = package.header.filesz
-        last_recv_seqnum += 1
-        finished, written = self.__reconstruct_file(package, path)
+        pkg = self.socket.reliable_send_and_recv(req_pkg, self.address)
+        self.socket.update_recv_stats(pkg)
+        self.logger.log(str(pkg.header.seqnum))
+        filesz = pkg.header.filesz
 
-        if finished:
-            self.fmanager.close_file(path)
-
-        while not finished:
-            self.socket.send_ack(last_recv_seqnum, self.address)
-            self.printer.print_progress(self.socket, written, filesz)
-            package = self.socket.listen_for_next_from(last_recv_seqnum)
+        if pkg.header.seqnum == (last_recv_seqnum + 1):
             last_recv_seqnum += 1
+            trnsmt_cmplt, written = self.__reconstruct_file(pkg, path)
+            self.printer.print_progress(self.socket, written, filesz)
 
-            finished, written = self.__reconstruct_file(package, path)
+        self.socket.send_ack(last_recv_seqnum, self.address)
+        self.logger.log("acked" + str(last_recv_seqnum))
+
+        timer = Timer(self.socket.timeout_limit)
+        while self.running and not trnsmt_cmplt:
+            try:
+                timer.start()
+                pkg, _ = self.socket.blocking_recv(timer)
+                timer.stop()
+                timeouts = 0
+                self.logger.log(str(pkg.header.seqnum))
+
+                if pkg.header.seqnum == (last_recv_seqnum + 1):
+                    last_recv_seqnum += 1
+                    trnsmt_cmplt, written = self.__reconstruct_file(pkg, path)
+                    self.printer.print_progress(self.socket, written, filesz)
+
+                self.socket.send_ack(last_recv_seqnum, self.address)
+                self.logger.log("acked" + str(last_recv_seqnum))
+
+            except TimeOutException:
+                timeouts += 1
+                if timeouts >= MAX_TIMEOUTS:
+                    raise AbortedException
 
         for _ in range(0, 3):
             self.socket.send_ack(last_recv_seqnum, self.address)
-        self.printer.print_download_finished(name)
+            self.logger.log("acked" + str(last_recv_seqnum))
 
     def __reconstruct_file(self, package, path):
         written = self.fmanager.write(path, package.payload, 'wb')
         return written >= package.header.filesz, written
 
     def close(self):
+        self.logger.close()
         self.running = False
         self.socket.close()
         if self.in_use_file_path:

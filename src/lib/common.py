@@ -1,4 +1,4 @@
 
 EXIT = 'q'
 
-W_SIZE = 10
+W_SIZE = 5

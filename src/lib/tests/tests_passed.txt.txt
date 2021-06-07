@@ -19,9 +19,7 @@ falta ver porque con mucho packet loss (30%) se cortaba el client
 
 test_6
 FAILED
-no anduvo ni siquiera sin packet loss
-no tira error pero se corta la conexion
-el client dice tener alrededor de 80 timeouts?!
+el recvd es mas que el tamaño de archivo y es porque cuenta los bytes de pkgs fuera de orden
 
 test_7
 OK

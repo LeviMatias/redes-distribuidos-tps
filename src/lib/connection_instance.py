@@ -5,9 +5,12 @@ from threading import Thread
 
 from lib.package import DOWNLOAD, UPLOAD
 from lib.exceptions import AbortedException, ConnectionInterrupt
+from lib.exceptions import TimeOutException
 from lib.package import Package, Header
 from lib.socket_udp import server_socket_udp
 from lib.socket_udp import CHUNK_SIZE, MAX_TIMEOUTS, CONNECTION_TIMEOUT
+from lib.logger import Logger
+from lib.timer import Timer
 
 
 class Connection_instance:
@@ -15,6 +18,7 @@ class Connection_instance:
         self.socket = server_socket_udp(address[0], address[1])
         self.address = address
         self.fmanager = fmanager
+        self.logger = Logger('./lib/files-server/')
         self.printer = printer
         self.running = False
         self.timeouts = 0
@@ -71,23 +75,34 @@ class Connection_instance:
         self.printer._print('S&W and GBN upload')
 
         last_recv_seqnum = -1
-        package = firts_pckg
-        filesz = package.header.filesz
-        transmt_cmplt = False
-        while self.running and not transmt_cmplt:
+        pkg = firts_pckg
+        size = firts_pckg.header.filesz
+        finished = False
 
-            if package.header.seqnum == last_recv_seqnum + 1:
-                transmt_cmplt, written = self.__reconstruct_file(package, path)
-                last_recv_seqnum += 1
+        timer = Timer(self.socket.timeout_limit)
+        timeouts = 0
+        while self.running and not finished:
+            try:
+                if pkg.header.seqnum == last_recv_seqnum + 1:
+                    finished, written = self.__reconstruct_file(pkg, path)
+                    self.printer.print_progress(self.socket, written, size)
+                    last_recv_seqnum += 1
 
-            self.socket.send_ack(last_recv_seqnum, self.address)
-            self.printer.print_progress(self.socket, written, filesz)
+                self.socket.send_ack(last_recv_seqnum, self.address)
 
-            if not transmt_cmplt:
-                package = self.pull()
-            else:
-                for _ in range(0, 3):
-                    self.socket.send_ack(last_recv_seqnum, self.address)
+                if not finished:
+                    timer.start()
+                    pkg = self.socket.blocking_recv_through(self.pckg_queue,
+                                                            timer)
+                    timer.stop()
+                    timeouts = 0
+
+            except TimeOutException:
+                timeouts += 1
+                if timeouts >= MAX_TIMEOUTS:
+                    raise AbortedException
+
+        self.printer.print_upload_finished(name)
 
     def do_download(self, request, path, name):
 
@@ -107,6 +122,7 @@ class Connection_instance:
             bytes_sent += len(payload)
             seqnum += 1
             self.printer.print_progress(self.socket, bytes_sent, filesz)
+        self.printer.print_download_finished(name)
 
     def is_active(self):
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
@@ -118,6 +134,7 @@ class Connection_instance:
         return written >= package.header.filesz, written
 
     def close(self):
+        self.logger.close()
         self.running = False
         self.socket.close()
         if self.in_use_file_path:

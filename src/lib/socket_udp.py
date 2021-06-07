@@ -5,9 +5,9 @@ import time
 import abc
 # import random
 
-CHUNK_SIZE = 5024
+CHUNK_SIZE = 1024*20
 
-CONNECTION_TIMEOUT = 0.25
+CONNECTION_TIMEOUT = 0.05
 MAX_TIMEOUTS = 20
 
 
@@ -68,12 +68,16 @@ class socket_udp (metaclass=abc.ABCMeta):
     def _recv_ack_to(self, package, package_queue=None):
         pass
 
-    def blocking_recv(self):
+    def blocking_recv(self, timer=None):
 
         package = None
         address = None
         package_recvd = False
         while not package_recvd and self.running:
+
+            if timer:
+                timer.update()
+
             recv_bytestream, address = self._recv()
 
             if recv_bytestream:
@@ -92,7 +96,10 @@ class socket_udp (metaclass=abc.ABCMeta):
         # if random.randint(0, 100) < 20:
         #    print("dropping " + str(package.header.seqnum))
         #    return 0
-        self.socket.sendto(bytestream, address)
+        try:
+            self.socket.sendto(bytestream, address)
+        except BlockingIOError:
+            return 0
         return sz
 
     def send_ack(self, seqnum, address):
@@ -220,10 +227,13 @@ class server_socket_udp (socket_udp):
     def bind(self):
         self.socket.bind((self.address, self.port))
 
-    def blocking_recv_through(self, package_queue=None):
+    def blocking_recv_through(self, package_queue=None, timer=None):
 
         recvd_package = None
         while not recvd_package and self.running:
+
+            if timer:
+                timer.update()
 
             if not package_queue.empty():
                 recvd_package = package_queue.get()
