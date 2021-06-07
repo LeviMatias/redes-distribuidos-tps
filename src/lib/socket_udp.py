@@ -7,7 +7,7 @@ import abc
 
 CHUNK_SIZE = 1024*20
 
-CONNECTION_TIMEOUT = 0.05
+CONNECTION_TIMEOUT = 0.5
 MAX_TIMEOUTS = 20
 
 
@@ -93,9 +93,9 @@ class socket_udp (metaclass=abc.ABCMeta):
         self.t_bytes_sent += sz
         self.pkg_sent += 1
 
-        # if random.randint(0, 100) < 20:
-        #    print("dropping " + str(package.header.seqnum))
-        #    return 0
+        '''
+        if random.randint(0, 100) < 30:
+            return 0'''
         try:
             self.socket.sendto(bytestream, address)
         except BlockingIOError:

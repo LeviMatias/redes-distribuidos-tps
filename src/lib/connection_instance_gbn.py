@@ -1,12 +1,12 @@
 from threading import Thread
 from lib.connection_instance import Connection_instance
 from lib.timer import Timer
-from lib.exceptions import TimeOutException
-from lib.common import W_SIZE
+from lib.exceptions import TimeOutException, GBNTimeOut
+from lib.common import W_SIZE, GBN_TIMEOUT
 from lib.package import Package, Header
 from lib.package import DOWNLOAD
 from lib.exceptions import AbortedException, ConnectionInterrupt
-from lib.socket_udp import CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.socket_udp import MAX_TIMEOUTS, CONNECTION_TIMEOUT
 from lib.socket_udp import CHUNK_SIZE
 
 
@@ -24,7 +24,7 @@ class Connection_instance_gbn(Connection_instance):
         self.acks_listener = None
 
     def window_full(self):
-        return (self.seqnum_head - self.window_base) == W_SIZE
+        return (self.seqnum_head - self.window_base) >= W_SIZE
 
     def fill_sending_queue(self, path, name, filesz):
 
@@ -53,7 +53,7 @@ class Connection_instance_gbn(Connection_instance):
 
         self.last_sent_seqnum += amount_sent
 
-    def recv_acks(self, timer):
+    def recv_acks(self, timers):
         try:
             while self.running:
                 pkg = self.socket.blocking_recv_through(self.pckg_queue)
@@ -61,13 +61,13 @@ class Connection_instance_gbn(Connection_instance):
                 if not pkg:
                     break
 
-                if pkg.is_ack():
+                if pkg.is_ack() and pkg.header.seqnum > -1:
                     ack_seqnum = pkg.header.seqnum
                     self.update_sent_acked_stats(ack_seqnum)
                     self.socket.update_recv_stats(pkg)
                     self.window_base = ack_seqnum
-                    timer.reset()
-                    self.logger.log("recvd ack" + str(ack_seqnum))
+                    [timer.reset() for timer in timers]
+                    self.logger.log("ack" + str(ack_seqnum))
         except (AbortedException, ConnectionInterrupt):
             self.running = False
 
@@ -90,18 +90,20 @@ class Connection_instance_gbn(Connection_instance):
 
         fsize = self.fmanager.get_size(path)
 
-        timer = Timer(CONNECTION_TIMEOUT)
-        self.acks_listener = Thread(args=[timer], target=self.recv_acks)
+        gbn_timer = Timer(GBN_TIMEOUT, GBNTimeOut)
+        connection_timer = Timer(CONNECTION_TIMEOUT, TimeOutException)
+        timers = [gbn_timer, connection_timer]
+
+        self.acks_listener = Thread(args=[timers],
+                                    target=self.recv_acks)
         self.acks_listener.start()
 
-        base_window_at_timeout = self.window_base
         timeouts = 0
-
-        timer.start()
+        [timer.start() for timer in timers]
         transfer_cmplt = False
         while not transfer_cmplt and self.running:
             try:
-                timer.update()
+                [timer.update() for timer in timers]
                 self.fill_sending_queue(path, name, fsize)
                 self.send_queued_unsent()
 
@@ -111,19 +113,18 @@ class Connection_instance_gbn(Connection_instance):
                 if self.file_finished and all_acked:
                     transfer_cmplt = True
 
+            except GBNTimeOut:
+                gbn_timer.reset()
+                self.send_all_queued()
+
             except TimeOutException:
-
-                if base_window_at_timeout == self.window_base:
-                    timeouts += 1
-                else:
-                    base_window_at_timeout = self.window_base
-
+                timeouts += 1
                 if timeouts >= MAX_TIMEOUTS:
-                    raise AbortedException
+                    raise(AbortedException)
                 else:
-                    timer.reset()
-                    self.send_all_queued()
-        timer.stop()
+                    connection_timer.reset()
+
+        [timer.stop() for timer in timers]
 
         self.printer.print_progress(self.socket, self.b_sent, fsize)
         self.printer.print_download_finished(name)

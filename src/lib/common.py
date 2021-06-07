@@ -2,3 +2,4 @@
 EXIT = 'q'
 
 W_SIZE = 5
+GBN_TIMEOUT = 0.05
