@@ -85,7 +85,7 @@ class Connection_instance:
         while self.running and not finished:
 
             if pkg.header.seqnum == last_recv_seqnum + 1:
-                finished, written = self.__reconstruct_file(pkg, path)
+                finished, written = self._reconstruct_file(pkg, path)
                 self.printer.print_progress(self.socket, written, size)
                 last_recv_seqnum += 1
 
