@@ -6,8 +6,7 @@ from lib.common import W_SIZE, GBN_TIMEOUT
 from lib.package import Package, Header
 from lib.package import DOWNLOAD
 from lib.exceptions import AbortedException, ConnectionInterrupt
-from lib.socket_udp import MAX_TIMEOUTS, CONNECTION_TIMEOUT
-from lib.socket_udp import CHUNK_SIZE
+from lib.common import MAX_TIMEOUTS, CONNECTION_TIMEOUT, CHUNK_SIZE
 
 
 class Connection_instance_gbn(Connection_instance):

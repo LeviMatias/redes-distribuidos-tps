@@ -2,3 +2,5 @@
 setting.json
 .vscode/launch.json
 src/lib/__pycache__/
+src/lib/files-client/log.txt
+src/lib/files-server/log.txt

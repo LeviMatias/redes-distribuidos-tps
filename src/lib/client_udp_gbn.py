@@ -1,6 +1,6 @@
 from threading import Thread
 from lib.client_udp import Client_udp
-from lib.socket_udp import CHUNK_SIZE, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.common import CHUNK_SIZE, CONNECTION_TIMEOUT, MAX_TIMEOUTS
 from lib.package import Package, Header, UPLOAD
 from lib.timer import Timer
 from lib.exceptions import GBNTimeOut, TimeOutException, AbortedException

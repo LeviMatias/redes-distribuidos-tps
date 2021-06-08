@@ -1,6 +1,7 @@
 from lib.package import Package, Header, UPLOAD
 from lib.exceptions import AbortedException, TimeOutException
-from lib.socket_udp import client_socket_udp, CHUNK_SIZE, MAX_TIMEOUTS
+from lib.common import CHUNK_SIZE, MAX_TIMEOUTS
+from lib.socket_udp import client_socket_udp
 from lib.logger import Logger
 from lib.timer import Timer
 import time
@@ -46,13 +47,13 @@ class Client_udp:
         seqnum = 0
         sent = 0
 
-        while sent < filesz:
+        while sent < filesz and self.running:
             header = Header(seqnum, UPLOAD, path, name, filesz)
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
 
-            self.socket.reliable_send(package, self.address)
+            self.socket.reliable_send(package, self.address, self.logger)
 
             sent += len(payload)
             seqnum += 1

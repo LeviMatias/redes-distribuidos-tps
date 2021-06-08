@@ -8,7 +8,7 @@ from lib.exceptions import AbortedException, ConnectionInterrupt
 from lib.exceptions import TimeOutException
 from lib.package import Package, Header
 from lib.socket_udp import server_socket_udp
-from lib.socket_udp import CHUNK_SIZE, MAX_TIMEOUTS, CONNECTION_TIMEOUT
+from lib.common import CHUNK_SIZE, MAX_TIMEOUTS, CONNECTION_TIMEOUT
 from lib.logger import Logger
 from lib.timer import Timer
 
@@ -80,6 +80,7 @@ class Connection_instance:
         pkg = firts_pckg
         size = firts_pckg.header.filesz
         finished = False
+        self.logger.log(str(pkg.header.seqnum))
 
         timer = Timer(self.socket.timeout_limit, TimeOutException)
         timeouts = 0
@@ -138,8 +139,8 @@ class Connection_instance:
         return written >= package.header.filesz, written
 
     def close(self):
-        self.logger.close()
         self.running = False
+        self.logger.close()
         self.socket.close()
         if self.in_use_file_path:
             self.fmanager.close_file(self.in_use_file_path)

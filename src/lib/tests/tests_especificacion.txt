@@ -26,12 +26,12 @@ download con dir correcta large file txt
 test_5
 upload con dir correcta binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s2.mp4 -v -gbn
+	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s2.mp3 -v -gbn
 
 test_6
 download con dir correcta binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c2.mp4 -n s2.mp4 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c2.mp3 -n s2.mp3 -v -gbn
 
 test_7
 download con dir correcta large file txt y con dir de server y client cambiada
@@ -63,57 +63,57 @@ download con dir correcta large file txt con quiet
 test_13
 download con dir correcta binary large con interrupcion de conexion del client
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c4.mp4 -n s2.mp4 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c4.mp3 -n s2.mp3 -v -gbn
 	<emitir interrupt desde client>
 se espera que salte un timeout del lado server
 	
 test_14
 upload con dir correcta binary large con interrupcion de conexion del client
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s3.mp4 -v  -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s3.mp3 -v  -gbn
 	<emitir interrupt desde client>
 se espera que salte un timeout del lado server
 	
 test_15
 download con dir correcta binary large con interrupcion de conexion del server
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c5.mp4 -n s3.mp4 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c5.mp3 -n s3.mp3 -v -gbn
 	<cerrar sever con la q>
 se espera que salte un timeout del lado client
 	
 test_16
 upload con dir correcta binary large con interrupcion de conexion del server
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/s4.mp4 -n test2.mp4 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/s4.mp3 -n test2.mp3 -v -gbn
 	<cerrar sever con la q>
 se espera que salte un timeout del lado client
 
 test_17
 dos clientes haciendo upload de dos binary large con diferente nombre
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s6.mp4 -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/c4.mp4 -n s7.mp4 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s6.mp3 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/c4.mp3 -n s7.mp3 -v -gbn
 
 test_18
 dos clientes haciendo upload de un mismo binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s6.mp4 -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s7.mp4 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s6.mp3 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s7.mp3 -v -gbn
 
 test_19
 dos clientes haciendo download de dos binary large distintos
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp4 -n s6.mp4 -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp4 -n s7.mp4 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp3 -n s7.mp3 -v -gbn
 
 test_20
 dos clientes haciendo download del mismo binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp4 -n s6.mp4 -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp4 -n s6.mp4 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp3 -n s6.mp3 -v -gbn
 	
 test_21
 se puede cerrar el server en cualquier momento con la q
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp4 -n s8.mp4 -v -gbn
+	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s8.mp3 -v -gbn
 	<cerrar sever con la q>

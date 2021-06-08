@@ -1,14 +1,10 @@
 from socket import AF_INET, SOCK_DGRAM, socket
 from lib.package import Package, ACK
 from lib.exceptions import TimeOutException, AbortedException
+from lib.common import CHUNK_SIZE, CONNECTION_TIMEOUT, MAX_TIMEOUTS
 import time
 import abc
 # import random
-
-CHUNK_SIZE = 1024*20
-
-CONNECTION_TIMEOUT = 0.5
-MAX_TIMEOUTS = 20
 
 
 class socket_udp (metaclass=abc.ABCMeta):
@@ -46,12 +42,15 @@ class socket_udp (metaclass=abc.ABCMeta):
         except (BlockingIOError, OSError):
             return None, None
 
-    def reliable_send(self, package, address, package_queue=None):
+    def reliable_send(self, package, address, logger, package_queue=None):
         for i in range(MAX_TIMEOUTS + 1):
             try:
                 self.send(package, address)
+                logger.log(str(package.header.seqnum))
                 self._recv_ack_to(package, package_queue)
+                logger.log("ack" + str(package.header.seqnum))
                 self.t_bytes_sent_ok += len(package.payload)
+                break
             except TimeOutException:
                 continue
 
