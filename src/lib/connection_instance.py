@@ -4,13 +4,11 @@ from threading import Thread
 
 
 from lib.package import DOWNLOAD, UPLOAD
-from lib.exceptions import AbortedException, ConnectionInterrupt
-from lib.exceptions import TimeOutException
+from lib.exceptions import ConnectionInterrupt, AbortedException
 from lib.package import Package, Header
 from lib.socket_udp import server_socket_udp
-from lib.common import CHUNK_SIZE, MAX_TIMEOUTS, CONNECTION_TIMEOUT
+from lib.common import CHUNK_SIZE, MAX_TIMEOUTS, CONNECTION_TIMEOUT_SV
 from lib.logger import Logger
-from lib.timer import Timer
 
 
 class Connection_instance:
@@ -35,6 +33,9 @@ class Connection_instance:
         package.validate()
         self.socket.update_recv_stats(package)
         return package
+
+    def has_queueded_packages(self):
+        return not self.pckg_queue.empty()
 
     def start(self):
         self.running = True
@@ -71,6 +72,7 @@ class Connection_instance:
             if not aborted:
                 self.printer.print_connection_finished(self.address)
             self.printer.print_duration(time.time() - start)
+            self.logger.log(str(-2))
             self.close()
 
     def do_upload(self, firts_pckg, path, name):
@@ -85,7 +87,7 @@ class Connection_instance:
         while self.running and not finished:
 
             if pkg.header.seqnum == last_recv_seqnum + 1:
-                finished, written = self.__reconstruct_file(pkg, path)
+                finished, written = self._reconstruct_file(pkg, path)
                 self.printer.print_progress(self.socket, written, size)
                 last_recv_seqnum += 1
 
@@ -93,7 +95,7 @@ class Connection_instance:
             self.logger.log("ack" + str(last_recv_seqnum))
 
             if not finished:
-                pkg = self.socket.blocking_recv_through(self.pckg_queue)
+                pkg = self.socket.blocking_recv_through(self)
                 self.logger.log(str(pkg.header.seqnum))
             else:
                 for _ in range(0, 3):
@@ -112,7 +114,7 @@ class Connection_instance:
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
-            self.socket.reliable_send(package, self.address, self.pckg_queue)
+            self.socket.reliable_send(package, self.address, self)
 
             bytes_sent += len(payload)
             seqnum += 1
@@ -120,7 +122,7 @@ class Connection_instance:
         self.printer.print_download_finished(name)
 
     def is_active(self):
-        timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
+        timed_out = (time.time() - self.last_active) > CONNECTION_TIMEOUT_SV
         self.timeouts += 1 if timed_out else 0
         return self.timeouts <= MAX_TIMEOUTS
 

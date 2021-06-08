@@ -1,6 +1,6 @@
 from threading import Thread
 from lib.client_udp import Client_udp
-from lib.common import CHUNK_SIZE, CONNECTION_TIMEOUT, MAX_TIMEOUTS
+from lib.common import CHUNK_SIZE, CONNECTION_TIMEOUT_CL, MAX_TIMEOUTS
 from lib.package import Package, Header, UPLOAD
 from lib.timer import Timer
 from lib.exceptions import GBNTimeOut, TimeOutException, AbortedException
@@ -86,7 +86,7 @@ class Client_udp_gbn(Client_udp):
         fsize = self.fmanager.get_size(path)
 
         gbn_timer = Timer(GBN_TIMEOUT, GBNTimeOut)
-        connection_timer = Timer(CONNECTION_TIMEOUT, TimeOutException)
+        connection_timer = Timer(CONNECTION_TIMEOUT_CL, TimeOutException)
         timers = [gbn_timer, connection_timer]
 
         self.acks_listener = Thread(args=[timers],

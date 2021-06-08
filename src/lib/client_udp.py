@@ -35,6 +35,7 @@ class Client_udp:
         except AbortedException:
             self.printer.print_connection_lost(self.address)
         finally:
+            self.logger.log(str(-2))
             self.close()
             self.printer.print_connection_finished(self.address)
             self.printer.print_duration(time.time() - start)
@@ -63,7 +64,7 @@ class Client_udp:
 
     def do_download(self, path, name):
 
-        self.printer._print('S&W and GBN download')
+        self.printer._print('S&W download')
         last_recv_seqnum = -1
         trnsmt_cmplt = False
 

@@ -6,7 +6,7 @@ from lib.common import W_SIZE, GBN_TIMEOUT
 from lib.package import Package, Header
 from lib.package import DOWNLOAD
 from lib.exceptions import AbortedException, ConnectionInterrupt
-from lib.common import MAX_TIMEOUTS, CONNECTION_TIMEOUT, CHUNK_SIZE
+from lib.common import MAX_TIMEOUTS, CONNECTION_TIMEOUT_SV, CHUNK_SIZE
 
 
 class Connection_instance_gbn(Connection_instance):
@@ -55,7 +55,7 @@ class Connection_instance_gbn(Connection_instance):
     def recv_acks(self, timers):
         try:
             while self.running:
-                pkg = self.socket.blocking_recv_through(self.pckg_queue)
+                pkg = self.socket.blocking_recv_through(self)
 
                 if not pkg:
                     break
@@ -104,8 +104,7 @@ class Connection_instance_gbn(Connection_instance):
 
                 if not finished:
                     timer.start()
-                    pkg = self.socket.blocking_recv_through(self.pckg_queue,
-                                                            timer)
+                    pkg = self.socket.blocking_recv_through(self, timer)
                     timer.stop()
                     timeouts = 0
                     self.logger.log(str(pkg.header.seqnum))
@@ -124,7 +123,7 @@ class Connection_instance_gbn(Connection_instance):
         fsize = self.fmanager.get_size(path)
 
         gbn_timer = Timer(GBN_TIMEOUT, GBNTimeOut)
-        connection_timer = Timer(CONNECTION_TIMEOUT, TimeOutException)
+        connection_timer = Timer(CONNECTION_TIMEOUT_SV, TimeOutException)
         timers = [gbn_timer, connection_timer]
 
         self.acks_listener = Thread(args=[timers],

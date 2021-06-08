@@ -86,10 +86,21 @@ class Server_udp:
             time.sleep(0.1)
             abortpckg = AbortPackage()
 
-            self.active_connections = {addr: c for addr, c
-                                       in self.active_connections.items()
-                                       if c.is_active() or c.push(abortpckg)
-                                       or c.join()}
+            dead = {}
+
+            for addr, c in self.active_connections.items():
+                if not c.is_active():
+                    c.push(abortpckg)
+                    dead[addr] = c
+
+            for addr, c in dead.items():
+                c.join()
+                del self.active_connections[addr]
+
+            #self.active_connections = {addr: c for addr, c
+                                       #in self.active_connections.items()
+                                       #if c.is_active() or c.push(abortpckg)
+                                       #or c.join()}
 
     def close(self):
         self.running = False
