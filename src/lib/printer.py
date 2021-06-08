@@ -7,6 +7,7 @@ class QuietPrinter:
 
     def __init__(self):
         self.printed = []
+        self.last_printed = time.time()
 
     def _print(self, msg, store_msg=True):
         print(msg+'\n')
@@ -83,7 +84,9 @@ class DefaultPrinter(QuietPrinter):
 class VerbosePrinter(DefaultPrinter):
 
     def print_progress(self, sock_stats, progress, filesz):
-
+        if (time.time() - self.last_printed < 0.25):
+            return
+        self.last_printed = time.time()
         barLength = 20
 
         now = time.time()

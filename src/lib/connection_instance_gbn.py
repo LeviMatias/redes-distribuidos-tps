@@ -84,6 +84,8 @@ class Connection_instance_gbn(Connection_instance):
             self.logger.log(str(pkg.header.seqnum))
 
     def do_upload(self, firts_pckg, path, name):
+        self.printer._print('GBN upload')
+
         last_recv_seqnum = -1
         pkg = firts_pckg
         size = firts_pckg.header.filesz
