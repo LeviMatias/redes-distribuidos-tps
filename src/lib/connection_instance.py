@@ -75,7 +75,7 @@ class Connection_instance:
     def do_upload(self, firts_pckg, path, name):
 
         self.printer._print('S&W and GBN upload')
-
+        '''
         last_recv_seqnum = -1
         pkg = firts_pckg
         size = firts_pckg.header.filesz
@@ -107,7 +107,26 @@ class Connection_instance:
                 if timeouts >= MAX_TIMEOUTS:
                     raise AbortedException
 
-        self.printer.print_upload_finished(name)
+        self.printer.print_upload_finished(name)'''
+
+        last_recv_seqnum = -1
+        size = firts_pckg.header.filesz
+        package = firts_pckg
+        finished = False
+        while self.running and not finished:
+
+            if package.header.seqnum == last_recv_seqnum + 1:
+                finished, written = self.__reconstruct_file(package, path)
+                self.printer.print_progress(self.socket, written, size)
+                last_recv_seqnum += 1
+
+            self.socket.send_ack(last_recv_seqnum, self.address)
+
+            if not finished:
+                package = self.pull()
+            else:
+                for _ in range(0, 3):
+                    self.socket.send_ack(last_recv_seqnum, self.address)
 
     def do_download(self, request, path, name):
 

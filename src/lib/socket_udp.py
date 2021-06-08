@@ -154,7 +154,7 @@ class client_socket_udp (socket_udp):
 
     def reliable_send_and_recv(self, package, address, package_queue=None):
         recv_package = None
-        while not recv_package:
+        while not recv_package and self.running:
             try:
                 sent = self.send(package, address)
                 recv_package, _ = self.recv_with_timer(package_queue)
@@ -166,7 +166,7 @@ class client_socket_udp (socket_udp):
     def listen_for_next_from(self, last_recvd_seqnum, package_queue=None):
 
         package_recvd = False
-        while not package_recvd:
+        while not package_recvd and self.running:
             try:
                 self._active()
                 recv_bytestream, _ = self._recv()
@@ -186,7 +186,7 @@ class client_socket_udp (socket_udp):
     def recv_with_timer(self, package_queue=None):
 
         package_recvd = False
-        while not package_recvd and self._active():
+        while not package_recvd and self._active() and self.running:
             recv_bytestream, address = self._recv()
 
             if recv_bytestream:
@@ -201,7 +201,7 @@ class client_socket_udp (socket_udp):
     def _recv_ack_to(self, package, package_queue=None):
 
         ack_recvd = False
-        while not ack_recvd and self._active():
+        while not ack_recvd and self._active() and self.running:
             recv_bytestream, _ = self._recv()
 
             if recv_bytestream:
@@ -243,7 +243,7 @@ class server_socket_udp (socket_udp):
 
     def _recv_ack_to(self, package, package_queue=None):
         ack_recvd = False
-        while not ack_recvd and self._active():
+        while not ack_recvd and self._active() and self.running:
 
             if not package_queue.empty():
                 recvd_package = package_queue.get()

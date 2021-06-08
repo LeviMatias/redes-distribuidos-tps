@@ -20,15 +20,10 @@ class QuietPrinter:
             traceback.print_exc()
 
     def print_connection_lost(self, addr):
-        self._print("Connection "+addr[0]+":"+str(addr[1]))
+        self._print(f"Connection {addr[0]}:{addr[1]} timed out")
 
     def print_connection_interrupted(self, addr):
-        self._print("Connection "+addr[0]+":"+str(addr[1]))
-
-    def print_connection_aborted(self, printStackTrace=False):
-        self._print('An error ocurred. Connection closed')
-        if printStackTrace:
-            traceback.print_exc()
+        self._print(f"Connection {addr[0]}:{addr[1]} interrupted")
 
     def print_program_closed(self):
         self._print('Exited')
