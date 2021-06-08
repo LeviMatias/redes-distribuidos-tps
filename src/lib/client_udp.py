@@ -66,7 +66,7 @@ class Client_udp:
 
     def do_download(self, path, name):
 
-        self.printer._print('S&W and GBN download')
+        self.printer._print('Download')
         last_recv_seqnum = -1
         trnsmt_cmplt = False
 
