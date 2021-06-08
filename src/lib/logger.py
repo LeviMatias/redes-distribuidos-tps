@@ -7,8 +7,11 @@ class Logger:
         self.logfile = open(path + 'log.txt', 'w')
 
     def log(self, msg):
-        t = time.time()
-        self.logfile.write(msg+'|'+str(t)+'\n')
+        try:
+            t = time.time()
+            self.logfile.write(msg+'|'+str(t)+'\n')
+        except ValueError:
+            pass
 
     def close(self):
         self.logfile.close()
