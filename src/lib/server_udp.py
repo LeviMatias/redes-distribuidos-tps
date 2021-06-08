@@ -48,7 +48,12 @@ class Server_udp:
             return
 
         if address not in self.active_connections:
-            self.create_connection_with(address)
+
+            is_ongoing_stream = package.header.seqnum > 0
+            if is_ongoing_stream:
+                return
+            else:
+                self.create_connection_with(address)
 
         self.active_connections[address].push(package)
 

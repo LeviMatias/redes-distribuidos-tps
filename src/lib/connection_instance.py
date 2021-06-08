@@ -28,6 +28,7 @@ class Connection_instance:
     def push(self, package):
         self.pckg_queue.put(package)
         self.last_active = time.time()
+        self.timeouts = 0
 
     def pull(self):
         package = self.pckg_queue.get()
@@ -111,19 +112,22 @@ class Connection_instance:
 
         last_recv_seqnum = -1
         size = firts_pckg.header.filesz
-        package = firts_pckg
+        pkg = firts_pckg
         finished = False
+        self.logger.log(str(pkg.header.seqnum))
         while self.running and not finished:
 
-            if package.header.seqnum == last_recv_seqnum + 1:
-                finished, written = self.__reconstruct_file(package, path)
+            if pkg.header.seqnum == last_recv_seqnum + 1:
+                finished, written = self.__reconstruct_file(pkg, path)
                 self.printer.print_progress(self.socket, written, size)
                 last_recv_seqnum += 1
 
             self.socket.send_ack(last_recv_seqnum, self.address)
+            self.logger.log("ack" + str(last_recv_seqnum))
 
             if not finished:
-                package = self.pull()
+                pkg = self.socket.blocking_recv_through(self.pckg_queue)
+                self.logger.log(str(pkg.header.seqnum))
             else:
                 for _ in range(0, 3):
                     self.socket.send_ack(last_recv_seqnum, self.address)
@@ -150,7 +154,7 @@ class Connection_instance:
 
     def is_active(self):
         timed_out = time.time() - self.last_active > CONNECTION_TIMEOUT
-        self.timeouts = self.timeouts + 1 if timed_out else 0
+        self.timeouts += 1 if timed_out else 0
         return self.timeouts <= MAX_TIMEOUTS
 
     def __reconstruct_file(self, package, server_file_path):
