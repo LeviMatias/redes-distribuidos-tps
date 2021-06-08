@@ -74,40 +74,7 @@ class Connection_instance:
 
     def do_upload(self, firts_pckg, path, name):
 
-        self.printer._print('S&W and GBN upload')
-        '''
-        last_recv_seqnum = -1
-        pkg = firts_pckg
-        size = firts_pckg.header.filesz
-        finished = False
-        self.logger.log(str(pkg.header.seqnum))
-
-        timer = Timer(self.socket.timeout_limit, TimeOutException)
-        timeouts = 0
-        while self.running and not finished:
-            try:
-                if pkg.header.seqnum == last_recv_seqnum + 1:
-                    finished, written = self.__reconstruct_file(pkg, path)
-                    self.printer.print_progress(self.socket, written, size)
-                    last_recv_seqnum += 1
-
-                self.socket.send_ack(last_recv_seqnum, self.address)
-                self.logger.log("ack" + str(last_recv_seqnum))
-
-                if not finished:
-                    timer.start()
-                    pkg = self.socket.blocking_recv_through(self.pckg_queue,
-                                                            timer)
-                    timer.stop()
-                    timeouts = 0
-                    self.logger.log(str(pkg.header.seqnum))
-
-            except TimeOutException:
-                timeouts += 1
-                if timeouts >= MAX_TIMEOUTS:
-                    raise AbortedException
-
-        self.printer.print_upload_finished(name)'''
+        self.printer._print('S&W upload')
 
         last_recv_seqnum = -1
         size = firts_pckg.header.filesz
@@ -153,7 +120,7 @@ class Connection_instance:
         self.timeouts = self.timeouts + 1 if timed_out else 0
         return self.timeouts <= MAX_TIMEOUTS
 
-    def __reconstruct_file(self, package, server_file_path):
+    def _reconstruct_file(self, package, server_file_path):
         written = self.fmanager.write(server_file_path, package.payload, 'wb')
         return written >= package.header.filesz, written
 

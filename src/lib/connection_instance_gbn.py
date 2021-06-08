@@ -83,6 +83,40 @@ class Connection_instance_gbn(Connection_instance):
             self.socket.send(pkg, self.address)
             self.logger.log(str(pkg.header.seqnum))
 
+    def do_upload(self, firts_pckg, path, name):
+        last_recv_seqnum = -1
+        pkg = firts_pckg
+        size = firts_pckg.header.filesz
+        finished = False
+        self.logger.log(str(pkg.header.seqnum))
+
+        timer = Timer(self.socket.timeout_limit, TimeOutException)
+        timeouts = 0
+        while self.running and not finished:
+            try:
+                if pkg.header.seqnum == last_recv_seqnum + 1:
+                    finished, written = self._reconstruct_file(pkg, path)
+                    self.printer.print_progress(self.socket, written, size)
+                    last_recv_seqnum += 1
+
+                self.socket.send_ack(last_recv_seqnum, self.address)
+                self.logger.log("ack" + str(last_recv_seqnum))
+
+                if not finished:
+                    timer.start()
+                    pkg = self.socket.blocking_recv_through(self.pckg_queue,
+                                                            timer)
+                    timer.stop()
+                    timeouts = 0
+                    self.logger.log(str(pkg.header.seqnum))
+
+            except TimeOutException:
+                timeouts += 1
+                if timeouts >= MAX_TIMEOUTS:
+                    raise AbortedException
+
+        self.printer.print_upload_finished(name)
+
     def do_download(self, request, path, name):
 
         self.printer._print('GBN download')
