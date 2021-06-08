@@ -114,7 +114,7 @@ class Connection_instance:
             size = CHUNK_SIZE - header.size
             payload = self.fmanager.read_chunk(size, path, how='rb')
             package = Package(header, payload)
-            self.socket.reliable_send(package, self.address, self)
+            self.socket.reliable_send(package, self.address, self.logger, self)
 
             bytes_sent += len(payload)
             seqnum += 1

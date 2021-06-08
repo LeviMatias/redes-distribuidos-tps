@@ -1,8 +1,11 @@
 
 TODOS LOS TEST DEBEN TENER ACTIVADA UN TASA DE PACKET LOSS NO NULA
 
-CADA VEZ QUE SE DETECTA UN PAQUETE PERDIDO EL VERBOSE DEBERIA LOGEAR ESE HECHO
 
+
+
+TESTS DE ERRORES BASICOS
+==========================================================================================
 test_1
 upload con dir incorrecta
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
@@ -12,36 +15,44 @@ test_2
 download con dir incorrecta
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c1.txt -n wrong_name -v -gbn
-
+	
 test_3
+download con dir correcta large file txt y con dir de server y client cambiada
+	python start-server -H localhost -p 9000 -s C:/Users/axelpm/ -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test1.txt -n s3.txt -v -gbn
+	
+test_4
+download con dir correcta large file txt y con port incorrecto
+	python start-server -H localhost -p 7000 -s ./lib/files-server/ -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test1.txt -n s2.txt -v -gbn
+
+
+TESTS DE FUNCIONALIDAD BASICA
+==========================================================================================
+
+test_5
 upload con dir correcta large file txt
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python upload-file -H localhost -p 9000 -d ./lib/files-client/test1.txt -n s1.txt -v -gbn
 
-test_4
+test_6
 download con dir correcta large file txt
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c1.txt -n s1.txt -v -gbn
 
-test_5
+test_7
 upload con dir correcta binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s2.mp3 -v -gbn
 
-test_6
+test_8
 download con dir correcta binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c2.mp3 -n s2.mp3 -v -gbn
 
-test_7
-download con dir correcta large file txt y con dir de server y client cambiada
-	python start-server -H localhost -p 9000 -s C:/Users/axelpm/ -v -gbn
-	python upload-file -H localhost -p 9000 -d C:/Users/axelpm/test1.txt -n s3.txt -v -gbn
 
-test_8
-download con dir correcta large file txt y con port incorrecto
-	python start-server -H localhost -p 7000 -s ./lib/files-server/ -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/test1.txt -n s2.txt -v -gbn
+TESTS DE OUTPUT CONSOLA
+==========================================================================================
 
 test_9
 testear help en upload
@@ -60,6 +71,9 @@ download con dir correcta large file txt con quiet
 	python start-server -H localhost -p 6000 -s ./lib/files-server/ --quiet -gbn
 	python download-file -H localhost -p 6000 -d ./lib/files-client/c3.txt -n s1.txt --quiet -gbn
 
+
+TESTS DE INTERRUPCION
+==========================================================================================
 test_13
 download con dir correcta binary large con interrupcion de conexion del client
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
@@ -84,10 +98,13 @@ se espera que salte un timeout del lado client
 test_16
 upload con dir correcta binary large con interrupcion de conexion del server
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python upload-file -H localhost -p 9000 -d ./lib/files-client/s4.mp3 -n test2.mp3 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s4.mp3 -v -gbn
 	<cerrar sever con la q>
 se espera que salte un timeout del lado client
 
+
+TESTS DE CONCURRENCIA
+==========================================================================================
 test_17
 dos clientes haciendo upload de dos binary large con diferente nombre
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
@@ -111,9 +128,27 @@ dos clientes haciendo download del mismo binary large
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp3 -n s6.mp3 -v -gbn
+se espera un cartel de "archivo en uso"
 	
 test_21
-se puede cerrar el server en cualquier momento con la q
+dos clientes haciendo download del mismo binary large hacia el mismo file
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python  upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s8.mp3 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
+	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
+se espera un cartel de "archivo en uso"
+	
+test_22
+dos clientes haciendo upload de dos binary large con diferente nombre y el server interrumpe
+	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s6.mp3 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/c4.mp3 -n s7.mp3 -v -gbn
 	<cerrar sever con la q>
+se espera que salte un timeout del lado client
+
+test_23
+dos clientes haciendo upload de dos binary large con diferente nombre y uno interrumpe
+	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s6.mp3 -v -gbn
+	python upload-file -H localhost -p 9000 -d ./lib/files-client/c4.mp3 -n s7.mp3 -v -gbn
+	<emitir interrupt desde un client>
+se espera que salte un timeout del lado server sin cortar el otro client

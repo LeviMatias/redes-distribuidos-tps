@@ -1,5 +1,10 @@
 
+TEST CORRIDOS CON:
+	DROP = 30%
 
+
+TESTS DE ERRORES BASICOS
+==========================================================================================
 test_1
 OK
 
@@ -10,24 +15,26 @@ test_3
 OK
 
 test_4
-OK
+OK?
+anduvo y no se a donde lo transfirio
 
+
+TESTS DE FUNCIONALIDAD BASICA
+==========================================================================================
 test_5
 OK
-falta mirar el S&W porque decia mal los bytes sent (era de mas)
-falta ver porque con mucho packet loss (30%) se cortaba el client
 
 test_6
-FAILED
-el recvd es mas que el tamaño de archivo y es porque cuenta los bytes de pkgs fuera de orden
+OK
 
 test_7
 OK
 
 test_8
-OK?
-lo transfirio correctamente pero no se a donde
+OK
 
+TESTS DE OUTPUT CONSOLA
+==========================================================================================
 test_9
 OK
 
@@ -37,6 +44,44 @@ OK
 test_11
 OK
 
+test_12
+OK
+
+TESTS DE INTERRUPCION
+==========================================================================================
+test_13
+OK
+
+test_14
+OK
+
+test_15
+OK
+
+test_16
+OK
+
+TESTS DE CONCURRENCIA
+==========================================================================================
+test_17
+OK
+
+test_18
+OK
+
+test_19
+OK
+
+test_20
+FAILED
+tiro un time out en vez de un cartel de archivo en uso
 
 test_21
+
+
+test_22
 OK
+
+test_23
+OK
+
