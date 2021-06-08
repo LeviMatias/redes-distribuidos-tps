@@ -5,12 +5,19 @@ from lib.argument_parser import ArgParser
 
 if __name__ == "__main__":
 
-    ArgParser.check_server_side_args(sys.argv)
+    try:
+        ArgParser.check_server_side_args(sys.argv)
+        h, host, port, dir_path, pr, gbn = ArgParser.parse_server_side(sys.argv)
+    except AssertionError as e:
+        print("Could not start application")
+        print(e)
+        h = True
 
-    help, host, port, dir_path, pr, gbn = ArgParser.parse_server_side(sys.argv)
-
-    if not help:
-        server = Server_udp(host, port, dir_path, pr, gbn)
-        server.run()
+    if not h:
+        try:
+            server = Server_udp(host, port, dir_path, pr, gbn)
+            server.run()
+        except ConnectionResetError:
+            print("Remote connection forcibly closed! Try checking addr & port")
 
 

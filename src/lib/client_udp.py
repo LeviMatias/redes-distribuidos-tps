@@ -30,14 +30,15 @@ class Client_udp:
         try:
             self.printer.print_begin_transfer(name)
             protocol(path, name)
+            self.printer.print_connection_finished(self.address)
         except FileNotFoundError:
             self.printer.print_file_not_found(path)
+            self.close()
+            return
         except AbortedException:
             self.printer.print_connection_lost(self.address)
         finally:
-            self.logger.log(str(-2))
             self.close()
-            self.printer.print_connection_finished(self.address)
             self.printer.print_duration(time.time() - start)
 
     def do_upload(self, path, name):
@@ -60,11 +61,12 @@ class Client_udp:
             seqnum += 1
             self.printer.print_progress(self.socket, sent, filesz)
 
+        self.printer.print_progress(self.socket, sent, filesz)
         self.printer.print_upload_finished(name)
 
     def do_download(self, path, name):
 
-        self.printer._print('S&W download')
+        self.printer._print('S&W and GBN download')
         last_recv_seqnum = -1
         trnsmt_cmplt = False
 
@@ -83,7 +85,6 @@ class Client_udp:
         self.logger.log("ack" + str(last_recv_seqnum))
 
         timer = Timer(self.socket.timeout_limit, TimeOutException)
-        timeouts = 0
         while self.running and not trnsmt_cmplt:
             try:
                 timer.start()
@@ -105,6 +106,7 @@ class Client_udp:
                 if timeouts >= MAX_TIMEOUTS:
                     raise AbortedException
 
+        self.printer.print_progress(self.socket, written, filesz)
         for _ in range(0, 3):
             self.socket.send_ack(last_recv_seqnum, self.address)
             self.logger.log("ack" + str(last_recv_seqnum))

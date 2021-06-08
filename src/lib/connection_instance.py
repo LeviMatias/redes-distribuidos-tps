@@ -45,7 +45,6 @@ class Connection_instance:
     def dispatch(self):
         start = time.time()
         self.printer.print_connection_established(self.address)
-        aborted = False
         try:
             first = self.pull()
             ptype = first.header.req
@@ -59,18 +58,16 @@ class Connection_instance:
                 self.do_upload(first, path, name)
             elif ptype == DOWNLOAD:
                 self.do_download(first, path, name)
-
+            self.printer.print_connection_finished(self.address)
         except FileNotFoundError:
             self.printer.print_file_not_found(path)
+            self.close()
+            return
         except (AbortedException, ConnectionResetError):
             self.printer.print_connection_lost(self.address)
-            aborted = True
         except ConnectionInterrupt:
             self.printer.print_connection_interrupted(self.address)
-            aborted = True
         finally:
-            if not aborted:
-                self.printer.print_connection_finished(self.address)
             self.printer.print_duration(time.time() - start)
             self.logger.log(str(-2))
             self.close()
@@ -119,6 +116,7 @@ class Connection_instance:
             bytes_sent += len(payload)
             seqnum += 1
             self.printer.print_progress(self.socket, bytes_sent, filesz)
+        self.printer.print_progress(self.socket, bytes_sent, filesz)
         self.printer.print_download_finished(name)
 
     def is_active(self):

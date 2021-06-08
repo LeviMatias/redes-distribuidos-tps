@@ -8,17 +8,21 @@ from lib.client_udp_gbn import Client_udp_gbn
 
 if __name__ == "__main__":
 
-    ArgParser.check_client_side_args(sys.argv)
+    try:
+        ArgParser.check_client_side_args(sys.argv)
+        h, host, port, path, n, pr, gbn = ArgParser.parse_client_side(sys.argv)
+    except AssertionError as e:
+        print("Could not start application")
+        print(e)
+        h = True
 
-    help, host, port, path, name, pr, gbn = ArgParser.parse_client_side(sys.argv)
-
-    if not help:
+    if not h:
         try:
             if gbn:
                 client = Client_udp_gbn(host, port, FileManager(), pr)
             else:
                 client = Client_udp(host, port, FileManager(), pr)
-            client.download(path, name)
+            client.download(path, n)
         except ConnectionResetError:
-            print("Remote connection forcibly closed by remote host!")
+            print("Remote connection forcibly closed! Try checking addr & port")
 
