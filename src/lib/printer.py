@@ -113,8 +113,6 @@ class VerbosePrinter(DefaultPrinter):
         arrow = '-' * int(round(ratio * barLength, 0)) + '>'
         spaces = ' ' * (barLength - len(arrow))
 
-        # return
-
         self._clear_screen()
         self._reprint_prev_prints()
 

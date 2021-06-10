@@ -121,8 +121,13 @@ class Connection_instance:
 
     def is_active(self):
         timed_out = (time.time() - self.last_active) > CONNECTION_TIMEOUT_SV
-        self.timeouts += 1 if timed_out else 0
-        return self.timeouts <= MAX_TIMEOUTS
+        if timed_out:
+            self.last_active = time.time()
+            self.timeouts += 1
+        if self.timeouts <= MAX_TIMEOUTS:
+            return True
+        else:
+            return False
 
     def _reconstruct_file(self, package, server_file_path):
         written = self.fmanager.write(server_file_path, package.payload, 'wb')

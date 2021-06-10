@@ -97,11 +97,6 @@ class Server_udp:
                 c.join()
                 del self.active_connections[addr]
 
-            #self.active_connections = {addr: c for addr, c
-                                       #in self.active_connections.items()
-                                       #if c.is_active() or c.push(abortpckg)
-                                       #or c.join()}
-
     def close(self):
         self.running = False
         for addr, connection in self.active_connections.items():

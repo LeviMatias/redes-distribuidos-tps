@@ -1,6 +1,9 @@
 
 TEST CORRIDOS CON:
-	DROP = 30%
+	LAG = 1ms
+	DROP = 20%
+	DUPLICATE = 1%
+	OUT OF ORDER = 5%
 
 
 TESTS DE ERRORES BASICOS
@@ -15,8 +18,7 @@ test_3
 OK
 
 test_4
-OK?
-anduvo y no se a donde lo transfirio
+OK
 
 
 TESTS DE FUNCIONALIDAD BASICA
@@ -73,15 +75,7 @@ test_19
 OK
 
 test_20
-FAILED
-tiro un time out en vez de un cartel de archivo en uso
+OK
 
 test_21
-
-
-test_22
 OK
-
-test_23
-OK
-

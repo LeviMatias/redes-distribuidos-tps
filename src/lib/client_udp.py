@@ -85,6 +85,7 @@ class Client_udp:
         self.logger.log("ack" + str(last_recv_seqnum))
 
         timer = Timer(self.socket.timeout_limit, TimeOutException)
+        timeouts = 0
         while self.running and not trnsmt_cmplt:
             try:
                 timer.start()

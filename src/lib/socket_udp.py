@@ -128,8 +128,7 @@ class socket_udp (metaclass=abc.ABCMeta):
     def _active(self):
         timed_out = (time.time() - self.last_active) > self.timeout_limit
 
-        if timed_out and self.timeouts < MAX_TIMEOUTS:  # permissible timeout
-            self.timeouts = self.timeouts + 1
+        if timed_out and self.timeouts <= MAX_TIMEOUTS:  # permissible timeout
             self._reset_timer()
             self.t_timeouts += 1
             raise TimeOutException()

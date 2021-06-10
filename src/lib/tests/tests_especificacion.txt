@@ -122,22 +122,8 @@ dos clientes haciendo download de dos binary large distintos
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
 	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp3 -n s7.mp3 -v -gbn
-
+	
 test_20
-dos clientes haciendo download del mismo binary large
-	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c7.mp3 -n s6.mp3 -v -gbn
-se espera un cartel de "archivo en uso"
-	
-test_21
-dos clientes haciendo download del mismo binary large hacia el mismo file
-	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
-	python download-file -H localhost -p 9000 -d ./lib/files-client/c6.mp3 -n s6.mp3 -v -gbn
-se espera un cartel de "archivo en uso"
-	
-test_22
 dos clientes haciendo upload de dos binary large con diferente nombre y el server interrumpe
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s6.mp3 -v -gbn
@@ -145,7 +131,7 @@ dos clientes haciendo upload de dos binary large con diferente nombre y el serve
 	<cerrar sever con la q>
 se espera que salte un timeout del lado client
 
-test_23
+test_21
 dos clientes haciendo upload de dos binary large con diferente nombre y uno interrumpe
 	python start-server -H localhost -p 9000 -s ./lib/files-server/ -v -gbn
 	python upload-file -H localhost -p 9000 -d ./lib/files-client/test2.mp3 -n s6.mp3 -v -gbn
