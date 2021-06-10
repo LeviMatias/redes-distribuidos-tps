@@ -42,6 +42,11 @@ ejemplo de uso
 
  python upload-file -H localhost -p 9000 -s ./lib/files-client/namesv1.txt -n test2.txt -v
 ```
+
+agregar el parametro -gbn activa el modo GO BACK-N tanto en server como en cliente upload o download.
+
+La ausencia del parametro se interpreta como una peticion de uso de STOP & WAIT
+
 ---
 
 detalles:
