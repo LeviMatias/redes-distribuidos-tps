@@ -45,3 +45,7 @@ ejemplo de uso
 detalles:
 * se configuro el TP con 10 timeouts de 0.25 secs, esto quiere decir que luego de pasados 5.25 segunds y 20 ciclos de reintento,
 el programa aborta asumiendo que el destino esta offline o fuera de alcance
+
+* no se maneja ni garantiza el correcto funcionamiento en el caso de dos clientes estar descargando sobre un mismo archivo en el mismo file system concurrentemente
+
+* no se maneja ni garantiza el correcto funcionamiento en el caso de dos clientes estar subiendo hacia un mismo archivo en el servidor
