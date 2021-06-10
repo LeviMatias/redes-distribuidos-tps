@@ -17,6 +17,8 @@ ejemplo de uso
 python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
 ```
 
+El server puede cerrarse en cualquier momento introduciendo por consola la letra q minuscula seguida de ENTER.
+
 **Client**
 
 ```
