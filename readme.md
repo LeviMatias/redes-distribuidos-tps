@@ -17,6 +17,8 @@ ejemplo de uso
 python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
 ```
 
+El server puede cerrarse en cualquier momento introduciendo por consola la letra q minuscula seguida de ENTER.
+
 **Client**
 
 ```
@@ -40,8 +42,17 @@ ejemplo de uso
 
  python upload-file -H localhost -p 9000 -s ./lib/files-client/namesv1.txt -n test2.txt -v
 ```
+
+agregar el parametro -gbn activa el modo GO BACK-N tanto en server como en cliente upload o download.
+
+La ausencia del parametro se interpreta como una peticion de uso de STOP & WAIT
+
 ---
 
 detalles:
 * se configuro el TP con 10 timeouts de 0.25 secs, esto quiere decir que luego de pasados 5.25 segunds y 20 ciclos de reintento,
 el programa aborta asumiendo que el destino esta offline o fuera de alcance
+
+* no se maneja ni garantiza el correcto funcionamiento en el caso de dos clientes estar descargando sobre un mismo archivo en el mismo file system concurrentemente
+
+* no se maneja ni garantiza el correcto funcionamiento en el caso de dos clientes estar subiendo hacia un mismo archivo en el servidor
