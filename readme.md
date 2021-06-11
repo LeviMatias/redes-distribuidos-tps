@@ -8,16 +8,16 @@ modo de uso del TP
 python start-server  [-h] [-v | -q] -H ADDR -p PORT -s DIRPATH
 ```
 donde ADDR, PORT es la address y port donde se correra el server
-DIRPATH es el directorio (terminado en /) sobre el que trabajara el server
+DIRPATH es el directorio sobre el que trabajara el server
 -h, -v y -q son parametros opcionales, help, verbose y quiet respectivamente
 el uso de help overridea la llamada al comando, imrpimiendo unicamente el menu de ayuda
 
 ejemplo de uso
 ```
-python start-server -H localhost -p 9000 -s ./lib/files-server/ -v
+python start-server -H localhost -p 9000 -s ./lib/files-server -v
 ```
 
-El server puede cerrarse en cualquier momento introduciendo por consola la letra q minuscula seguida de ENTER.
+El server puede cerrarse en cualquier momento introduciendo por consola la letra 'q' minuscula seguida de ENTER.
 
 **Client**
 
@@ -43,16 +43,23 @@ ejemplo de uso
  python upload-file -H localhost -p 9000 -s ./lib/files-client/namesv1.txt -n test2.txt -v
 ```
 
-agregar el parametro -gbn activa el modo GO BACK-N tanto en server como en cliente upload o download.
+**GoBackN**
+Por default, el server y el client son desplegados en modo StopAndWait, para desplegar GBN es necesario agregar el parametro '-gbn' que activa el modo GO BACK-N tanto en server como en cliente upload o download.
 
 La ausencia del parametro se interpreta como una peticion de uso de STOP & WAIT
 
+
+
+ejemplo
+
+```
+ python start-server -H localhost -p 9000 -s ./lib/files-server -v -gbn
+
+ python upload-file -H localhost -p 9000 -s ./lib/files-client/namesv1.txt -n test2.txt -v -gbn
+```
+
 ---
 
-detalles:
-* se configuro el TP con 10 timeouts de 0.25 secs, esto quiere decir que luego de pasados 5.25 segunds y 20 ciclos de reintento,
-el programa aborta asumiendo que el destino esta offline o fuera de alcance
+**Detalles**
 
-* no se maneja ni garantiza el correcto funcionamiento en el caso de dos clientes estar descargando sobre un mismo archivo en el mismo file system concurrentemente
-
-* no se maneja ni garantiza el correcto funcionamiento en el caso de dos clientes estar subiendo hacia un mismo archivo en el servidor
+* no se maneja ni garantiza el correcto funcionamiento en el caso de dos o mas clientes operando sobre un mismo archivo en simultaneo en el servidor
