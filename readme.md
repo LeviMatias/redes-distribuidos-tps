@@ -64,4 +64,3 @@ ejemplo
 
 * no se maneja ni garantiza el correcto funcionamiento en el caso de dos o mas clientes operando sobre un mismo archivo en simultaneo en el servidor
 
-* el parametro -gbn no tiene ningun impacto sobre el reciver de la transferencia dado que el reciver siempre utiliza el protocolo StopAndWait
