@@ -683,4 +683,5 @@ def _maybe_initialize ():
   if 'pydoc' in mod or 'pdoc' in mod:
     initialize()
     return
-_maybe_initialize()
+# _maybe_initialize() <--- get squashed noob
+initialize()
