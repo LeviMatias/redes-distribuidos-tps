@@ -2,3 +2,45 @@
 setting.json
 /src/lib/files-client/*
 /src/lib/files-server/*
+tp3 - topo2/pox/__pycache__/*
+tp3 - topo2/pox/__pycache__/__init__.cpython-39.pyc
+tp3 - topo2/pox/__pycache__/core.cpython-39.pyc
+tp3 - topo2/pox/lib/__pycache__/__init__.cpython-39.pyc
+tp3 - topo2/pox/lib/__pycache__/addresses.cpython-39.pyc
+tp3 - topo2/pox/lib/__pycache__/epoll_select.cpython-39.pyc
+tp3 - topo2/pox/lib/__pycache__/iter.cpython-39.pyc
+tp3 - topo2/pox/lib/__pycache__/socketcapture.cpython-39.pyc
+tp3 - topo2/pox/lib/__pycache__/util.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/__init__.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/arp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/dhcp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/dns.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/eap.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/eapol.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/ethernet.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/gre.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/icmp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/icmpv6.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/igmp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/ipv4.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/ipv6.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/llc.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/lldp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/mpls.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/packet_base.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/packet_utils.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/rip.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/tcp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/udp.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/vlan.cpython-39.pyc
+tp3 - topo2/pox/lib/packet/__pycache__/vxlan.cpython-39.pyc
+tp3 - topo2/pox/lib/recoco/__pycache__/__init__.cpython-39.pyc
+tp3 - topo2/pox/lib/recoco/__pycache__/recoco.cpython-39.pyc
+tp3 - topo2/pox/lib/revent/__pycache__/__init__.cpython-39.pyc
+tp3 - topo2/pox/lib/revent/__pycache__/revent.cpython-39.pyc
+tp3 - topo2/pox/openflow/__pycache__/__init__.cpython-39.pyc
+tp3 - topo2/pox/openflow/__pycache__/debug.cpython-39.pyc
+tp3 - topo2/pox/openflow/__pycache__/libopenflow_01.cpython-39.pyc
+tp3 - topo2/pox/openflow/__pycache__/of_01.cpython-39.pyc
+tp3 - topo2/pox/openflow/__pycache__/util.cpython-39.pyc
+.DS_Store
