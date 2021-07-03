@@ -10,6 +10,7 @@ topology enables one to pass in '--topo=mytopo' from the command line.
 
 from mininet.topo import Topo
 
+
 class MyTopo( Topo ):
 
     def build( self, nswitches ):

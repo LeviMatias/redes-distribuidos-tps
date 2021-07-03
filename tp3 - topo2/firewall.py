@@ -11,6 +11,8 @@ from pox.lib.addresses import EthAddr
 from collections import namedtuple
 import os
 
+log = core.getLogger()
+
 class Firewall ( EventMixin ) :
     def __init__ ( self ) :
         log = core . getLogger ()
@@ -23,6 +25,6 @@ class Firewall ( EventMixin ) :
         print("wowowowo")
         # Add your logic here ...
 
-    def launch ():
-        # Starting the Firewall module
-        core.registerNew( Firewall )
+def launch ():
+    # Starting the Firewall module
+    core.registerNew( Firewall )
