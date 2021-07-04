@@ -17,13 +17,40 @@ class Firewall ( EventMixin ) :
     def __init__ ( self ) :
         log = core . getLogger ()
         self . listenTo ( core . openflow )
-        log . debug ( " Enabling Firewall Module " )
-        print("eeeeeeeeeeeeee")
+        log.debug( " Enabling Firewall Module " )
 
     def _handle_ConnectionUp ( self , event ) :
-        print(event)
-        print("wowowowo")
+        pass
         # Add your logic here ...
+    
+    def block(self, event):
+        # Halt the event, stopping l2_learning from seeing it
+        # (and installing a table entry for it)
+        core.getLogger("blocker").debug("Blocked %s <-> %s", udpp.srcport, udpp.dstport)
+        event.halt = True
+
+    def rule1(self, event):
+        p = event.parsed.find('udp')
+        if not p:
+            p = event.parsed.find('tcp')
+        if not p:
+            return
+        
+        if (p.dstport == 80):
+            block(event)
+
+    # TODO missing: check source host == host 1
+    def rule2(self, event):
+        udpp = event.parsed.find('udp')
+        if not udpp: return # Not UDP
+        # check dst port
+        if udpp.dstport == 5001:
+           block(event)
+
+    def _handle_PacketIn (self, event):
+        self.rule1(event)
+        if not event.halt:
+            log.debug( "pass rule 1" )
 
 def launch ():
     # Starting the Firewall module
