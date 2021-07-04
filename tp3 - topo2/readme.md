@@ -8,4 +8,4 @@ or
 
 then, on a different console set up the configuration and run the test ping all
 
-sudo mn --custom ./topo1.py --topo mytopo,11 --switch ovsk --controller remote --test pingall
+sudo mn --custom ./topo2.py --topo mytopo,11 --switch ovsk --controller remote --test pingall
