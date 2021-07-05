@@ -9,8 +9,10 @@ topology enables one to pass in '--topo=mytopo' from the command line.
 """
 
 from mininet.topo import Topo
-from hosts import IPs, MACs
-
+# from hosts import IPs, MACs
+# hardcoded for now
+IPs = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
+MACs = ['00:00:00:00:00:01', '00:00:00:00:00:02', '00:00:00:00:00:03', '00:00:00:00:00:04']
 
 class MyTopo( Topo ):
 
