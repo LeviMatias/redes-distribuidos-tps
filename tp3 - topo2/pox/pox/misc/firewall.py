@@ -24,11 +24,8 @@ class Firewall ( EventMixin ) :
         # Add your logic here ...
     
     def get_ip(self, event):
-        ip = event.parsed.find('ipv4')
-        if ip is None:
-            # This packet isn't IP!
-            return -1
-        return ip.srcip
+        log.debug("MAC", event.parsed.src.to_str())# mac
+        return event.parsed.next.srcip.ipv4.toStr() #ip
 
     def block(self, event):
         # Halt the event, stopping l2_learning from seeing it
