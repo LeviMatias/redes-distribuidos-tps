@@ -9,6 +9,7 @@ topology enables one to pass in '--topo=mytopo' from the command line.
 """
 
 from mininet.topo import Topo
+from hosts import IPs, MACs
 
 
 class MyTopo( Topo ):
@@ -26,13 +27,13 @@ class MyTopo( Topo ):
             prevswitch = switch
         
         # Adding hosts
-        h1 = self.addHost( 'h1', ip='10.0.0.1', mac='00:00:00:00:00:01' )
-        h2 = self.addHost( 'h2', ip='10.0.0.2', mac='00:00:00:00:00:02' )
+        h1 = self.addHost( 'h1', ip = IPs[0], mac = MACs[0] )
+        h2 = self.addHost( 'h2', ip = IPs[1], mac = MACs[1]  )
         self.addLink(h1, switches[0])
         self.addLink(h2, switches[0])
 
-        h3 = self.addHost( 'h3', ip='10.0.0.3', mac='00:00:00:00:00:03' )
-        h4 = self.addHost( 'h4', ip='10.0.0.4', mac='00:00:00:00:00:04' )
+        h3 = self.addHost( 'h3', ip = IPs[2], mac = MACs[2] )
+        h4 = self.addHost( 'h4', ip = IPs[3], mac = MACs[3] )
         self.addLink(h3, switches[-1])
         self.addLink(h4, switches[-1])
 

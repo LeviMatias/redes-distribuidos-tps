@@ -39,18 +39,21 @@ class Firewall ( EventMixin ) :
         if (p.dstport == 80):
             block(event)
 
-    # TODO missing: check source host == host 1
     def rule2(self, event):
         udpp = event.parsed.find('udp')
         if not udpp: return # Not UDP
         # check dst port
-        if udpp.dstport == 5001:
+        if udpp.srcip == '10.0.0.1' and udpp.dstport == 5001:
            block(event)
 
     def _handle_PacketIn (self, event):
         self.rule1(event)
         if not event.halt:
             log.debug( "pass rule 1" )
+        self.rule2(event)
+        if not event.halt:
+            log.debug( "pass rule 2" )
+
 
 def launch ():
     # Starting the Firewall module
