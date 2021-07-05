@@ -1,66 +1,68 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname("__file__"))))
-
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
-from pox.lib.revent import *
-from pox.lib.util import dpidToStr
-from pox.lib.addresses import EthAddr
-from collections import namedtuple
-import os
+import pox.lib.packet as pkt
+from pox.lib.revent import EventMixin
 
-from host_generator import get_host
+from pox.host_generator import get_host
 
 log = core.getLogger()
 
-class Firewall ( EventMixin ) :
+class Firewall(EventMixin):
 
-    def __init__ ( self ) :
-        log = core . getLogger ()
-        self . listenTo ( core . openflow )
-        log.debug( " Enabling Firewall Module " )
+    def __init__(self):
+        log = core.getLogger()
+        self.listenTo(core.openflow)
+        log.debug(" Enabling Firewall Module ")
 
-    def _handle_ConnectionUp ( self , event ) :
-        pass
-        # Add your logic here ...
+    def _handle_ConnectionUp(self, event):
 
-    def block(self, packet):
-        # Halt the event, stopping l2_learning from seeing it
-        # (and installing a table entry for it)
-        core.getLogger("blocker").debug("Blocked %s <-> %s", packet.srcport, packet.dstport)
-        packet.halt = True
+        connection = event.connection
 
-    def rule1(self, packet):
+        self.send_rule(connection, self.rule1)
+        self.send_rule(connection, self.rule2)
 
-        if (packet.dstport == 80):
-            self.block(packet)
+        #rule3:
+        h1 = 1
+        h2 = 2
+        # disconnect host1 --> host2
+        self.send_rule(connection, self.__make_disconnect, [h1, h2])
+        # disconnect host2 --> host1
+        self.send_rule(connection, self.__make_disconnect, [h2, h1])
 
-    def rule2(self, packet):
+        log.info("Firewall rules installed on %s", event.dpid)
 
-        udpp = packet.find('udp')
+    def send_rule(self, connection, rule, args=None):
 
-        if not udpp: return # Not UDP
+        # create rule
+        msg = of.ofp_flow_mod()
+        match = of.ofp_match()
 
-        if udpp.dstport != 5001: return # Not port 5001
+        # rule settings
+        match = rule(match, args)
 
-        _, ip = get_host(1)
-        if udpp.srcip != ip: return # Not port h1
+        # assign and send rule
+        msg.match = match
+        msg.priority = 10
+        connection.send(msg)
 
-        self.block(packet)
+    def rule1(self, match, _):
+        match.tp_dst = 80
+        return match
 
-    def _handle_PacketIn (self, event):
+    def rule2(self, match, _):
+        match.nw_proto = pkt.ipv4.UDP_PROTOCOL
+        match.tp_dst = 5001
+        match.nw_src = get_host(1)[1]
+        return match
 
-        packet = event.parsed
+    def __make_disconnect(self, match, args):
 
-        self.rule1(packet)
-        if not event.halt:
-            log.debug( "pass rule 1" )
+        h1 = args[0]
+        h2 = args[1]
 
-        self.rule2(packet)
-        if not event.halt:
-            log.debug( "pass rule 2" )
+        match.nw_src = get_host(h1)[1]
+        match.nw_dst = get_host(h2)[1]
+        return match
 
 def launch ():
     # Starting the Firewall module

@@ -14,7 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname("__file__"))))
 
 
 from mininet.topo import Topo
-from host_generator import get_host
+from pox.pox.host_generator import get_host
 
 class MyTopo( Topo ):
 
