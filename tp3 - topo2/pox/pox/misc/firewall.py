@@ -23,6 +23,13 @@ class Firewall ( EventMixin ) :
         pass
         # Add your logic here ...
     
+    def get_ip(self, event):
+        ip = event.parsed.find('ipv4')
+        if ip is None:
+            # This packet isn't IP!
+            return -1
+        return ip.srcip
+
     def block(self, event):
         # Halt the event, stopping l2_learning from seeing it
         # (and installing a table entry for it)
@@ -43,7 +50,9 @@ class Firewall ( EventMixin ) :
         udpp = event.parsed.find('udp')
         if not udpp: return # Not UDP
         # check dst port
-        if udpp.srcip == '10.0.0.1' and udpp.dstport == 5001:
+        ip = self.get_ip(event)
+        log.debug(ip)
+        if ip == '10.0.0.1' and udpp.dstport == 5001:
            block(event)
 
     def _handle_PacketIn (self, event):
