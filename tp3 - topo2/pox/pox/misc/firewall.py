@@ -24,7 +24,7 @@ class Firewall ( EventMixin ) :
         # Add your logic here ...
     
     def get_ip(self, event):
-        log.debug("MAC", event.parsed.src.to_str())# mac
+        log.debug("MAC" + event.parsed.src.to_str())# mac
         return event.parsed.next.srcip.ipv4.toStr() #ip
 
     def block(self, event):
