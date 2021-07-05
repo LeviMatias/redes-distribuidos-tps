@@ -9,7 +9,7 @@
             "name": "test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/pox/pox/misc/firewall.py",
+            "program": "${workspaceFolder}/pox/pox.py",
             "console": "integratedTerminal",
             "args": [
                 "log.level",

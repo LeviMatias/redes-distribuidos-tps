@@ -1,11 +1,17 @@
 import sys
+import os
 
-sys.path.append(sys.path[0].replace('/src/pox/pox/misc',''))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname("__file__"))))
 
-from src.pox.pox.core import core
-from src.pox.pox.lib.revent import EventMixin
+from pox.core import core
+import pox.openflow.libopenflow_01 as of
+from pox.lib.revent import *
+from pox.lib.util import dpidToStr
+from pox.lib.addresses import EthAddr
+from collections import namedtuple
+import os
 
-from src.host_generator import get_host
+from host_generator import get_host
 
 log = core.getLogger()
 
