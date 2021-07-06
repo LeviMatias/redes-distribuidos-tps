@@ -14,7 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname("__file__"))))
 
 
 from mininet.topo import Topo
-from pox.pox.host_generator import get_host
+from pox.host_generator import get_host
 
 class MyTopo( Topo ):
 
@@ -31,17 +31,17 @@ class MyTopo( Topo ):
             prevswitch = switch
 
         # Adding hosts
-        host, ip = get_host(1)
-        h1 = self.addHost( host, ip=ip)
+        h, ip = get_host(1)
+        h1 = self.addHost( h, ip=ip)
+        
+        h, ip = get_host(2)
+        h2 = self.addHost( h, ip=ip)
 
-        host, ip = get_host(2)
-        h2 = self.addHost( host, ip=ip)
+        h, ip = get_host(3)
+        h3 = self.addHost( h, ip=ip)
 
-        host, ip = get_host(3)
-        h3 = self.addHost( host, ip=ip)
-
-        host, ip = get_host(4)
-        h4 = self.addHost( host, ip=ip)
+        h, ip = get_host(4)
+        h4 = self.addHost( h, ip=ip)
 
         self.addLink(h1, switches[0])
         self.addLink(h2, switches[0])
@@ -55,3 +55,5 @@ def start(nswitches = 3):
     return MyTopo(nswitches)
 
 topos = { 'mytopo': start }
+
+start()

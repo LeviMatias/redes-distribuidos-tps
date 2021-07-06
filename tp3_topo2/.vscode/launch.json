@@ -3,10 +3,10 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
+    "configurations": [  
         {
             "cwd": "${workspaceFolder}",
-            "name": "test",
+            "name": "testFirewall",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/pox/pox.py",
@@ -16,6 +16,22 @@
                 "misc.firewall",
                 "forwarding.l2_learning"
             ]
+        },
+        {
+            "cwd": "${workspaceFolder}",
+            "name": "testTopo2",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/topo2.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "cwd": "${workspaceFolder}",
+            "name": "configReader",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pox/config_reader.py",
+            "console": "integratedTerminal"
         }
     ]
 }

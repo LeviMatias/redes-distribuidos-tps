@@ -1,0 +1,38 @@
+{
+    "rule1":{
+        "dl_type": "none",
+        "nw_proto": "none",
+        "nw_src": "none",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "80",
+        "action": "block"
+    },
+    "rule2":{
+        "dl_type": "none",
+        "nw_proto": "udp",
+        "nw_src": "host1",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "5001",
+        "action": "block"
+    },
+    "rule3_part1":{
+        "dl_type": "none",
+        "nw_proto": "none",
+        "nw_src": "host1",
+        "nw_dst": "host2",
+        "tp_src": "none",
+        "tp_dst": "none",
+        "action": "block"
+    },
+    "rule3_part2":{
+        "dl_type": "none",
+        "nw_proto": "none",
+        "nw_src": "host2",
+        "nw_dst": "host1",
+        "tp_src": "none",
+        "tp_dst": "none",
+        "action": "block"
+    }
+}
