@@ -31,17 +31,17 @@ class MyTopo( Topo ):
             prevswitch = switch
 
         # Adding hosts
-        h, ip = get_host(1)
-        h1 = self.addHost( h, ip=ip)
+        h, ip, mac = get_host(1)
+        h1 = self.addHost( h, ip=ip, mac=mac)
         
-        h, ip = get_host(2)
-        h2 = self.addHost( h, ip=ip)
+        h, ip, mac = get_host(2)
+        h2 = self.addHost( h, ip=ip, mac=mac)
 
-        h, ip = get_host(3)
-        h3 = self.addHost( h, ip=ip)
+        h, ip, mac = get_host(3)
+        h3 = self.addHost( h, ip=ip, mac=mac)
 
-        h, ip = get_host(4)
-        h4 = self.addHost( h, ip=ip)
+        h, ip, mac = get_host(4)
+        h4 = self.addHost( h, ip=ip, mac=mac)
 
         self.addLink(h1, switches[0])
         self.addLink(h2, switches[0])

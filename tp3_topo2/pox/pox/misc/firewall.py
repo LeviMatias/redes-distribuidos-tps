@@ -1,3 +1,4 @@
+from openflow.libopenflow_01 import OFP_DEFAULT_PRIORITY, OFP_FLOW_PERMANENT
 from config_reader import ConfigReader
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
@@ -20,20 +21,24 @@ class Firewall(EventMixin):
 
         connection = event.connection
 
-        for match, action in rules:
-            self.send_rule(connection, match, action)
+        for rule in rules:
+            self.send_rule(connection, rule)
 
         log.info("Firewall rules installed on %s", event.dpid)
 
-    def send_rule(self, connection, match, action):
+    def send_rule(self, connection, rule):
 
         # create rule
         msg = of.ofp_flow_mod()
 
         # assign and send rule
-        msg.match = match
-        msg.priority = 10
-        msg.actions.append(action)
+        msg.match = rule
+        msg.command = of.ofp_flow_mod_command_rev_map['OFPFC_ADD']
+        msg.priority = OFP_DEFAULT_PRIORITY
+        msg.idle_timeout = OFP_FLOW_PERMANENT
+        msg.hard_timeout = OFP_FLOW_PERMANENT
+        #msg.out_port = of.ofp_port_rev_map['OFPP_NONE']
+        #msg.actions.append(action)
         connection.send(msg)
 
 def launch ():

@@ -1,6 +1,5 @@
 import pox.lib.packet as pkt
 import pox.openflow.libopenflow_01 as of
-from pox.lib.addresses import EthAddr, IPAddr
 
 import json
 from host_generator import get_host
@@ -20,9 +19,9 @@ class ConfigReader:
         return rules
 
     def load(self, path):
-        #with open(path+'.json', 'r') as f:
+        with open(path+'.json', 'r') as f:
         #with open('./'+self.config_name+'.json', 'r') as f:
-        with open('/home/axelmpm/Repos/INTRO/redes-distribuidos-tps/tp3_topo2/rule_config.json', 'r') as f:
+        #with open('/home/axelmpm/Repos/INTRO/redes-distribuidos-tps/tp3_topo2/rule_config.json', 'r') as f:
             rules = json.load(f)
         return rules
 
@@ -36,16 +35,13 @@ class ConfigReader:
 
     def __map_param(self, param, value):
 
-        if value == "none":
-            return None
-
-        elif param == "dl_type":
+        if param == "dl_type":
             if value == "ip":
                 return pkt.ethernet.IP_TYPE
             elif value == "ip6":
                 return pkt.ethernet.IPV6_TYPE
             else:
-                return None
+                return pkt.ethernet.IP_TYPE
 
         elif param == "nw_proto":
             if value == "tcp":
@@ -58,19 +54,19 @@ class ConfigReader:
                 return None
 
         elif param == "nw_src" or param == "nw_dst":
-            host_num = int(value.replace('host',''))
-            _, ip = get_host(host_num)
-            return ip
+            if value == 'none':
+                return None
+            else:
+                host_num = int(value.replace('host',''))
+                _, ip, _ = get_host(host_num)
+                return ip
 
         elif param == "tp_src" or param == "tp_dst":
-            port_num = int(value)
-            return port_num
-
-        elif param == "action":
-            if value == "block":
-                return of.ofp_action_output(port = of.OFPP_NONE)
-            else:
+            if value == 'none':
                 return None
+            else:
+                port_num = int(value)
+                return port_num
         else:
             return None
 
@@ -87,13 +83,5 @@ class ConfigReader:
                 tp_dst = params['tp_dst'],
             )
 
-            built_rules.append((match, params['action']))
+            built_rules.append(match)
         return built_rules
-
-
-
-#rules = ConfigReader().read()
-#for rule, params in rules.items():
-    #print(rule, params)
-#for rule, _ in rules:
-    #print(rule)
