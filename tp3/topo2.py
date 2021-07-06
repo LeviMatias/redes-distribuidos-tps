@@ -9,12 +9,17 @@ topology enables one to pass in '--topo=mytopo' from the command line.
 """
 
 from mininet.topo import Topo
-# from hosts import IPs, MACs
-# hardcoded for now
-IPs = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
-MACs = ['00:00:00:00:00:01', '00:00:00:00:00:02', '00:00:00:00:00:03', '00:00:00:00:00:04']
 
-class MyTopo( Topo ):
+def get_host(host_number):
+    
+    if host_number < 10:
+        mac_host_number = '0'+str(host_number)
+    else:
+        mac_host_number = str(host_number)
+
+    return 'h'+str(host_number), '10.0.0.'+str(host_number), '00:00:00:00:00:'+mac_host_number
+
+class Topo2( Topo ):
 
     def build( self, nswitches ):
         "Create custom topo."
@@ -27,21 +32,28 @@ class MyTopo( Topo ):
             if prevswitch:
                 self.addLink(prevswitch, switch)
             prevswitch = switch
-        
+
         # Adding hosts
-        h1 = self.addHost( 'h1', ip = IPs[0], mac = MACs[0] )
-        h2 = self.addHost( 'h2', ip = IPs[1], mac = MACs[1]  )
+        h, ip, mac = get_host(1)
+        h1 = self.addHost( h, ip=ip, mac=mac)
+        
+        h, ip, mac = get_host(2)
+        h2 = self.addHost( h, ip=ip, mac=mac)
+
+        h, ip, mac = get_host(3)
+        h3 = self.addHost( h, ip=ip, mac=mac)
+
+        h, ip, mac = get_host(4)
+        h4 = self.addHost( h, ip=ip, mac=mac)
+
         self.addLink(h1, switches[0])
         self.addLink(h2, switches[0])
 
-        h3 = self.addHost( 'h3', ip = IPs[2], mac = MACs[2] )
-        h4 = self.addHost( 'h4', ip = IPs[3], mac = MACs[3] )
         self.addLink(h3, switches[-1])
         self.addLink(h4, switches[-1])
 
-        #"Create custom topo."
 
 def start(nswitches = 3):
-    return MyTopo(nswitches)
+    return Topo2(nswitches)
 
-topos = { 'mytopo': start }
+topos = { 'topo2': start }

@@ -1,5 +1,5 @@
-from mininet.topo import Topo
 import math
+from mininet.topo import Topo
 
 def get_host(host_number):
     
@@ -9,6 +9,7 @@ def get_host(host_number):
         mac_host_number = str(host_number)
 
     return 'h'+str(host_number), '10.0.0.'+str(host_number), '00:00:00:00:00:'+mac_host_number
+
 
 def get_switch_amount(switch_level):
     sum = math.pow(2, switch_level - 1)

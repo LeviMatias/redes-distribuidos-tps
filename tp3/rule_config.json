@@ -1,0 +1,34 @@
+{
+    "rule1_part1":{
+        "dl_type": "none",
+        "nw_proto": "tcp",
+        "nw_src": "none",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "80"
+    },
+    "rule1_part2":{
+        "dl_type": "none",
+        "nw_proto": "udp",
+        "nw_src": "none",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "80"
+    },
+    "rule2":{
+        "dl_type": "none",
+        "nw_proto": "udp",
+        "nw_src": "host1",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "5001"
+    },
+    "rule3":{
+        "dl_type": "none",
+        "nw_proto": "none",
+        "nw_src": "host1",
+        "nw_dst": "host2",
+        "tp_src": "none",
+        "tp_dst": "none"
+    }
+}
