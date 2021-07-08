@@ -1,0 +1,583 @@
+
+HERRAMIENTAS Y REQUERIMIENTOS:
+===================================================================
+los test del 1 al 6
+    deben ser corridos con el wireshark abierto capturando
+    debe haber captura de pantalla con el resultado de la consola2
+    debe haber algun tipo de captura que evidencia lo sucedido en wireshark
+        plots
+        estadisticas
+        etc
+
+los tests del 7 al 24
+    deben ser corridos con el wireshark abierto capturando
+    debe haber captura de pantalla con el resultado de la consola2 o las consolas de los host abiertas por xterm
+    debe haber algun tipo de captura que evidencia lo sucedido en wireshark
+        plots
+        estadisticas
+        etc
+
+===================================================================
+1)
+DESCRIPCION:
+    topo1, switch level=1, host=3
+
+COMMANDOS:
+    consola1:
+    > ./pox.py forwarding.l2_learning openflow.spanning_tree --no-flood --hold-down openflow.discovery host_tracker
+
+    consola2:
+    > sudo mn --custom topo1.py --topo topo1,switch_level=1,host_amount=3 --mac --arp --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    los tres host son alcanzables desde los otros tres
+
+===================================================================
+2)
+DESCRIPCION:
+    topo1, switch level=2, host=3
+
+COMMANDOS:
+    consola1:
+    > ./pox.py forwarding.l2_learning openflow.spanning_tree --no-flood --hold-down openflow.discovery host_tracker
+
+    consola2:
+    > sudo mn --custom topo1.py --topo topo1,switch_level=2,host_amount=3 --mac --arp --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    los tres host son alcanzables desde los otros tres
+
+===================================================================
+3)
+DESCRIPCION:
+    topo1, switch level=3, host=4
+
+COMMANDOS:
+    consola1:
+    > ./pox.py forwarding.l2_learning openflow.spanning_tree --no-flood --hold-down openflow.discovery host_tracker
+
+    consola2:
+    > sudo mn --custom topo1.py --topo topo1,switch_level=3,host_amount=4 --mac --arp --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    los cuatro host son alcanzables desde los otros cuatro
+
+===================================================================
+4)
+DESCRIPCION:
+    topo1, switch level=4, host=5
+
+COMMANDOS:
+    consola1:
+    > ./pox.py forwarding.l2_learning openflow.spanning_tree --no-flood --hold-down openflow.discovery host_tracker
+
+    consola2:
+    > sudo mn --custom topo1.py --topo topo1,switch_level=4,host_amount=5 --mac --arp --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    se tiene una red de switch level=3 (es decir, 10 switchs)
+    los cinco host son alcanzables desde los otros cinco
+
+===================================================================
+5)
+DESCRIPCION:
+    topo1, switch level=5, host=6
+
+COMMANDOS:
+    consola1:
+    > ./pox.py forwarding.l2_learning openflow.spanning_tree --no-flood --hold-down openflow.discovery host_tracker
+
+    consola2:
+    > sudo mn --custom topo1.py --topo topo1,switch_level=5,host_amount=6 --mac --arp --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    se tiene una red de switch level=3 (es decir, 10 switchs)
+    se capean los hosts a cinco
+    los cinco host son alcanzables desde los otros cinco
+
+===================================================================
+6)
+DESCRIPCION:
+    topo2, switch intermedios=1, sin reglas
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,1 --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    los cuatro host son alcanzables desde los otros cuatro
+
+===================================================================
+7)
+DESCRIPCION:
+    topo2, switch intermedios=10, sin reglas
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    los cuatro host son alcanzables desde los otros cuatro
+
+===================================================================
+8)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 1
+    trafico: tcp
+    puerto: 80
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h1:
+    iperf -s -p 80
+
+    consola h2:
+    iperf -c 10.0.0.1 -p 80
+
+OUTCOME:
+    se espera que el trafico de h2 hacia h1 no llegue nunca
+
+===================================================================
+9)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 1
+    trafico: tcp
+    puerto: 81
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h1:
+    iperf -s -p 81
+
+    consola h2:
+    iperf -c 10.0.0.1 -p 81
+
+OUTCOME:
+    se espera que el trafico de h2 llegue sin problemas
+
+===================================================================
+10)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 1
+    trafico: udp
+    puerto: 80
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h1:
+    iperf -s -p 80 -u
+
+    consola h2:
+    iperf -c 10.0.0.1 -p 80 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h2 hacia h1 no llegue nunca
+
+===================================================================
+11)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 1
+    trafico: udp
+    puerto: 81
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h1:
+    iperf -s -p 81 -u
+
+    consola h2:
+    iperf -c 10.0.0.1 -p 81 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h2 llegue sin problemas
+
+===================================================================
+12)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: udp
+    puerto: 5001
+    desde: h1
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h2:
+    iperf -s -p 5001 -u
+
+    consola h1:
+    iperf -c 10.0.0.2 -p 5001 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h2 hacia h1 no llegue nunca
+
+===================================================================
+13)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: tcp
+    puerto: 5001
+    desde: h1
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h2:
+    iperf -s -p 5001
+
+    consola h1:
+    iperf -c 10.0.0.2 -p 5001
+
+OUTCOME:
+    se espera que el trafico de h1 llegue sin problemas
+
+===================================================================
+14)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: udp
+    puerto: 5002
+    desde: h1
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h2:
+    iperf -s -p 5002 -u
+
+    consola h1:
+    iperf -c 10.0.0.2 -p 5002 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h1 llegue sin problemas
+
+===================================================================
+15)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: tcp
+    puerto: 5002
+    desde: h1
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h2:
+    iperf -s -p 5001
+
+    consola h1:
+    iperf -c 10.0.0.2 -p 5001
+
+OUTCOME:
+    se espera que el trafico de h1 llegue sin problemas
+
+===================================================================
+16)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: udp
+    puerto: 5001
+    desde: h3
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h3 h2
+
+    consola h2:
+    iperf -s -p 5001 -u
+
+    consola h3:
+    iperf -c 10.0.0.2 -p 5001 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h3 llegue sin problemas
+
+===================================================================
+17)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: tcp
+    puerto: 5001
+    desde: h3
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h3 h2
+
+    consola h2:
+    iperf -s -p 5001
+
+    consola h3:
+    iperf -c 10.0.0.2 -p 5001
+
+OUTCOME:
+    se espera que el trafico de h3 llegue sin problemas
+
+===================================================================
+18)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: udp
+    puerto: 5002
+    desde: h3
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h3 h2
+
+    consola h2:
+    iperf -s -p 5002 -u
+
+    consola h3:
+    iperf -c 10.0.0.2 -p 5002 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h3 llegue sin problemas
+
+===================================================================
+19)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 2
+    trafico: tcp
+    puerto: 5002
+    desde: h3
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h3 h2
+
+    consola h2:
+    iperf -s -p 5002
+
+    consola h3:
+    iperf -c 10.0.0.2 -p 5002
+
+OUTCOME:
+    se espera que el trafico de h3 llegue sin problemas
+
+===================================================================
+20)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 3
+    se desconectan por config h3 y h4
+    trafico: udp
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h3 h4
+
+    consola h3:
+    iperf -s -p 9000 -u
+
+    consola h4:
+    iperf -c 10.0.0.3 -p 9000 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h3 no llegue nunca
+
+===================================================================
+21)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 3
+    se desconectan por config h3 y h4
+    trafico: tcp
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h3 h4
+
+    consola h3:
+    iperf -s -p 9000
+
+    consola h4:
+    iperf -c 10.0.0.3 -p 9000
+
+OUTCOME:
+    se espera que el trafico de h3 no llegue nunca
+
+===================================================================
+22)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 3
+    se desconectan por config h3 y h4
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    se espera que haya conectividad de todos con todos salvo entre
+        h3 y h4
+        h4 y h3
+
+===================================================================
+22)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 3
+    se desconectan por config h1 y h2
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > pingall
+
+OUTCOME:
+    se espera que haya conectividad de todos con todos salvo entre
+        h1 y h2
+        h2 y h1
+
+===================================================================
+23)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 4
+    regla 4 se define como:
+    "rule4":{
+        "dl_type": "none",
+        "nw_proto": "tcp",
+        "nw_src": "none",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "7000"
+    }
+    trafico: tcp
+    puerto: 7000
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h2:
+    iperf -s -p 7000
+
+    consola h1:
+    iperf -c 10.0.0.2 -p 7000
+
+OUTCOME:
+    se espera que el trafico de h1 no llegue nunca
+
+===================================================================
+24)
+DESCRIPCION:
+    topo2, switch intermedios=10, solo regla 4
+    regla 4 se define como:
+    "rule4":{
+        "dl_type": "none",
+        "nw_proto": "tcp",
+        "nw_src": "none",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "7000"
+    }
+    trafico: udp
+    puerto: 7000
+
+COMMANDOS:
+    consola1:
+    > ./pox.py misc.firewall forwarding.l2_learning
+
+    consola2:
+    > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
+    > xterm h1 h2
+
+    consola h2:
+    iperf -s -p 7000 -u
+
+    consola h1:
+    iperf -c 10.0.0.2 -p 7000 -u -b 20M
+
+OUTCOME:
+    se espera que el trafico de h1 llegue sin problemas
+
+===================================================================

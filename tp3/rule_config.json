@@ -26,8 +26,8 @@
     "rule3":{
         "dl_type": "none",
         "nw_proto": "none",
-        "nw_src": "host1",
-        "nw_dst": "host2",
+        "nw_src": "host3",
+        "nw_dst": "host4",
         "tp_src": "none",
         "tp_dst": "none"
     }

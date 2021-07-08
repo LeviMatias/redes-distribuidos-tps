@@ -22,8 +22,8 @@ class Topo1(Topo):
 
     def build( self, switch_level, host_amount):
 
-        if host_amount > 4:
-            host_amount = 4
+        if host_amount > 5:
+            host_amount = 5
 
         if host_amount < 1:
             host_amount = 1
