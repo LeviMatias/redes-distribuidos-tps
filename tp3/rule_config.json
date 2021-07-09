@@ -23,11 +23,19 @@
         "tp_src": "none",
         "tp_dst": "5001"
     },
-    "rule3":{
+    "rule3_part1":{
         "dl_type": "none",
         "nw_proto": "none",
         "nw_src": "host3",
         "nw_dst": "host4",
+        "tp_src": "none",
+        "tp_dst": "none"
+    },
+    "rule3_part2":{
+        "dl_type": "none",
+        "nw_proto": "none",
+        "nw_src": "host4",
+        "nw_dst": "host3",
         "tp_src": "none",
         "tp_dst": "none"
     }
