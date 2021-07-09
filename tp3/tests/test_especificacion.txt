@@ -18,7 +18,7 @@ los tests del 7 al 24
         etc
 
 ===================================================================
-1)
+1)OK
 DESCRIPCION:
     topo1, switch level=1, host=3
 
@@ -34,7 +34,7 @@ OUTCOME:
     los tres host son alcanzables desde los otros tres
 
 ===================================================================
-2)
+2)OK
 DESCRIPCION:
     topo1, switch level=2, host=3
 
@@ -50,7 +50,7 @@ OUTCOME:
     los tres host son alcanzables desde los otros tres
 
 ===================================================================
-3)
+3)OK
 DESCRIPCION:
     topo1, switch level=3, host=4
 
@@ -66,7 +66,7 @@ OUTCOME:
     los cuatro host son alcanzables desde los otros cuatro
 
 ===================================================================
-4)
+4)OK
 DESCRIPCION:
     topo1, switch level=4, host=5
 
@@ -83,7 +83,7 @@ OUTCOME:
     los cinco host son alcanzables desde los otros cinco
 
 ===================================================================
-5)
+5)OK
 DESCRIPCION:
     topo1, switch level=5, host=6
 
@@ -101,7 +101,7 @@ OUTCOME:
     los cinco host son alcanzables desde los otros cinco
 
 ===================================================================
-6)
+6) OK
 DESCRIPCION:
     topo2, switch intermedios=1, sin reglas
 
@@ -117,7 +117,7 @@ OUTCOME:
     los cuatro host son alcanzables desde los otros cuatro
 
 ===================================================================
-7)
+7) OK
 DESCRIPCION:
     topo2, switch intermedios=10, sin reglas
 
@@ -133,7 +133,7 @@ OUTCOME:
     los cuatro host son alcanzables desde los otros cuatro
 
 ===================================================================
-8)
+8) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 1
     trafico: tcp
@@ -157,7 +157,7 @@ OUTCOME:
     se espera que el trafico de h2 hacia h1 no llegue nunca
 
 ===================================================================
-9)
+9) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 1
     trafico: tcp
@@ -181,7 +181,7 @@ OUTCOME:
     se espera que el trafico de h2 llegue sin problemas
 
 ===================================================================
-10)
+10) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 1
     trafico: udp
@@ -205,7 +205,7 @@ OUTCOME:
     se espera que el trafico de h2 hacia h1 no llegue nunca
 
 ===================================================================
-11)
+11) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 1
     trafico: udp
@@ -229,7 +229,7 @@ OUTCOME:
     se espera que el trafico de h2 llegue sin problemas
 
 ===================================================================
-12)
+12) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: udp
@@ -254,7 +254,7 @@ OUTCOME:
     se espera que el trafico de h2 hacia h1 no llegue nunca
 
 ===================================================================
-13)
+13) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: tcp
@@ -279,7 +279,7 @@ OUTCOME:
     se espera que el trafico de h1 llegue sin problemas
 
 ===================================================================
-14)
+14) ok
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: udp
@@ -304,7 +304,7 @@ OUTCOME:
     se espera que el trafico de h1 llegue sin problemas
 
 ===================================================================
-15)
+15) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: tcp
@@ -354,7 +354,7 @@ OUTCOME:
     se espera que el trafico de h3 llegue sin problemas
 
 ===================================================================
-17)
+17) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: tcp
@@ -379,7 +379,7 @@ OUTCOME:
     se espera que el trafico de h3 llegue sin problemas
 
 ===================================================================
-18)
+18) ok
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: udp
@@ -404,7 +404,7 @@ OUTCOME:
     se espera que el trafico de h3 llegue sin problemas
 
 ===================================================================
-19)
+19) ok
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 2
     trafico: tcp
@@ -429,7 +429,7 @@ OUTCOME:
     se espera que el trafico de h3 llegue sin problemas
 
 ===================================================================
-20)
+20) OK (connection refused)
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 3
     se desconectan por config h3 y h4
@@ -443,17 +443,17 @@ COMMANDOS:
     > sudo mn --custom ./topo2.py --topo topo2,10 --switch ovsk --controller remote
     > xterm h3 h4
 
-    consola h3:
+    consola h4:
     iperf -s -p 9000 -u
 
-    consola h4:
+    consola h3:
     iperf -c 10.0.0.3 -p 9000 -u -b 20M
 
 OUTCOME:
     se espera que el trafico de h3 no llegue nunca
 
 ===================================================================
-21)
+21) OK (refused)
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 3
     se desconectan por config h3 y h4
@@ -496,7 +496,7 @@ OUTCOME:
         h4 y h3
 
 ===================================================================
-22)
+22) OK
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 3
     se desconectan por config h1 y h2
@@ -515,7 +515,7 @@ OUTCOME:
         h2 y h1
 
 ===================================================================
-23)
+23) SKIPPED (too similar to rule 1 tests)
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 4
     regla 4 se define como:
@@ -548,7 +548,7 @@ OUTCOME:
     se espera que el trafico de h1 no llegue nunca
 
 ===================================================================
-24)
+24) SKIPPED (too similar to rule 1 tests)
 DESCRIPCION:
     topo2, switch intermedios=10, solo regla 4
     regla 4 se define como:
