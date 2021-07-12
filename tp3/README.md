@@ -37,3 +37,10 @@ or
 then, on a different console set up the configuration and run the test ping all
 
 > sudo mn --custom ./topo2.py --topo topo2,11 --switch ovsk --controller remote
+
+
+WIRESHARK
+========================================
+
+filtro
+(openflow or openflow_v1 or openflow_v4 or openflow_v5 or openflow_v6 or icmp)

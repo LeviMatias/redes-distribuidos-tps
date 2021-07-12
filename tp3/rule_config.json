@@ -1,4 +1,12 @@
 {
+    "rule0":{
+        "dl_type": "none",
+        "nw_proto": "icmp",
+        "nw_src": "none",
+        "nw_dst": "none",
+        "tp_src": "none",
+        "tp_dst": "none"
+    },
     "rule1_part1":{
         "dl_type": "none",
         "nw_proto": "tcp",
